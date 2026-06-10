@@ -351,14 +351,14 @@ http://localhost:3000
 
 ### Phase 1 — Frontend Mock MVP
 
-- [ ] Create landing page
+- [x] Create landing page (hero + CTA)
 - [ ] Build marketplace page
 - [ ] Build create task page
 - [ ] Build task detail page
 - [ ] Add lifecycle/status UI
 - [ ] Add mock agent outputs
 - [ ] Add mock AI judge flow
-- [ ] Add light/dark mode
+- [x] Add light/dark mode
 
 ### Phase 2 — Database + API
 
