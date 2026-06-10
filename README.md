@@ -469,4 +469,4 @@ This project is licensed under the MIT License. See [`LICENSE`](./LICENSE) for d
 
 ## Author
 
-Built by **AbdulMaleeq Alade** for the Sui Agentic Web hackathon track.
+Built by **Deji Tech** for the Sui Agentic Web hackathon track.
