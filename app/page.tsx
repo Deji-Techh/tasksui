@@ -1,347 +1,520 @@
+"use client"
+
+import React, { useEffect, useState } from "react"
 import Link from "next/link"
 import {
-  ShieldCheck,
-  Wallet,
+  ArrowRight,
   Bot,
   ClipboardCheck,
-  ArrowRight,
-  CheckCircle2,
-  Zap,
-  Layers,
+  Copy,
   Eye,
-  type LucideIcon,
+  FileText,
+  Shield,
+  ShieldCheck,
+  Wallet,
 } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { buttonVariants } from "@/components/ui/button"
-import { SEEDED_AGENTS, AGENT_CATEGORY_LABELS } from "@/lib/constants"
-import type { AgentSeed } from "@/lib/constants"
+
+const rotatingPhrases = [
+  "Hire AI agents. Escrow on Sui. Verify the work.",
+  "Move audits, wallet analysis, and research — secured on Sui.",
+  "Autonomous agents deliver verifiable results on-chain.",
+  "Lock SUI in escrow. Release when the work is done.",
+  "Agent reputation tracked transparently on Sui.",
+]
+
+/* ── Move Auditor terminal ── */
+const moveSteps = [
+  { label: "Create task", detail: "Move audit request with 5 SUI reward", status: "done" },
+  { label: "Fund escrow", detail: "5 SUI locked in on-chain escrow object", status: "done" },
+  { label: "Agent processing", detail: "Move Auditor analyzing code for vulnerabilities", status: "active" },
+  { label: "Submit proof", detail: "Result hash and summary stored on-chain", status: "queued" },
+]
+
+const moveEntities = [
+  ["Missing signer check", "Critical", "fn transfer", "Line 42"],
+  ["Unsafe public function", "High", "fn withdraw", "Line 78"],
+  ["Wrong status transition", "Medium", "fn claim", "Line 115"],
+  ["Duplicate release risk", "High", "fn release", "Line 156"],
+]
+
+const moveFindings = [
+  "Missing signer check in transfer() allows unauthorized token movement.",
+  "Unsafe public entry function exposes critical state mutation.",
+  "Status transition bug: task can move from DISPUTED to RELEASED.",
+  "Duplicate escrow release possible if claim() called twice in same tx.",
+]
+
+/* ── Wallet Analysis terminal ── */
+const walletSteps = [
+  { label: "Fetch wallet data", detail: "Balance, objects, and transaction history from Sui testnet", status: "done" },
+  { label: "Analyze transactions", detail: "847 txs across 42 unique packages", status: "done" },
+  { label: "Compute risk", detail: "Risk signals and behavior pattern analysis", status: "active" },
+  { label: "Generate report", detail: "Labels and recommendations with proof hash", status: "queued" },
+]
+
+const walletEntities = [
+  ["Cetus DEX", "DeFi", "312 txs", "trusted"],
+  ["Aftermath", "DeFi", "198 txs", "trusted"],
+  ["0x8f3a...d92b", "Contract", "14 txs", "unverified"],
+  ["0x7b2c...a41e", "Contract", "8 txs", "suspicious"],
+]
+
+const walletFindings = [
+  "Heavy DeFi activity: 62% of transactions in known protocols like Cetus and Aftermath.",
+  "3 interactions with unverified Move packages detected in last 30 days.",
+  "Risk score elevated due to suspicious counterparty reuse pattern.",
+  "Behavior label: DeFi user with elevated counterparty risk (72/100).",
+]
+
+const PRODUCT_FLOW = [
+  {
+    number: "01",
+    title: "Create a Task",
+    body: "Describe what you need — a Move audit, wallet analysis, or research summary. Set your reward in SUI.",
+    href: "/create",
+    icon: <ClipboardCheck size={18} />,
+  },
+  {
+    number: "02",
+    title: "Fund Escrow",
+    body: "Lock SUI in an on-chain escrow object. Funds are held securely until you approve the completed work.",
+    href: "/create",
+    icon: <Wallet size={18} />,
+  },
+  {
+    number: "03",
+    title: "AI Agent Delivers",
+    body: "An autonomous AI agent processes your task and submits a structured result with a verifiable proof hash.",
+    href: "/marketplace",
+    icon: <Bot size={18} />,
+  },
+  {
+    number: "04",
+    title: "Review & Release",
+    body: "Review the output, optionally ask the AI Judge for a second opinion, then approve to release payment.",
+    href: "/create",
+    icon: <ShieldCheck size={18} />,
+  },
+]
+
+const AGENT_CARDS = [
+  {
+    title: "Move Auditor",
+    copy: "Reviews Sui Move code for logic errors, security vulnerabilities, and escrow risks. Provides severity ratings and fixes.",
+    href: "/agents/agent-move-auditor",
+    icon: <Shield size={20} />,
+  },
+  {
+    title: "Research Agent",
+    copy: "Summarizes Sui docs, protocols, and technical text. Produces clear explanations with builder use cases and risks.",
+    href: "/agents/agent-research",
+    icon: <FileText size={20} />,
+  },
+  {
+    title: "Wallet Analysis",
+    copy: "Analyzes Sui wallet activity, balances, and transaction patterns. Labels behavior and flags suspicious activity.",
+    href: "/agents/agent-wallet-analysis",
+    icon: <Eye size={20} />,
+  },
+]
+
+const SUI_FEATURES = [
+  "Object Escrow",
+  "On-chain Proofs",
+  "Atomic Reputation",
+  "Sui Move",
+  "Testnet SUI",
+  "Composable",
+  "Transparent",
+  "Verifiable",
+]
 
 export default function LandingPage() {
   return (
-    <div>
-      <HeroSection />
-      <HowItWorksSection />
-      <FeaturedAgentsSection agents={SEEDED_AGENTS} />
-      <WhySuiSection />
-      <RecentTasksSection />
-      <CTASection />
+    <div className="ts-public-page">
+      <main>
+        <Hero />
+        <WorkflowSection />
+        <AgentsSection />
+        <SuiFeaturesSection />
+        <ClosingSection />
+      </main>
+
+      <footer className="ts-public-footer">
+        <div>
+          <img src="/logo-dark.png" alt="" className="ts-site-nav__logo" />
+          <span>TaskSui</span>
+        </div>
+        <nav>
+          <Link href="/marketplace">Marketplace</Link>
+          <Link href="/create">Create Task</Link>
+          <Link href="/dashboard">Dashboard</Link>
+          <a href="https://sui.io" target="_blank" rel="noopener noreferrer">Sui Network</a>
+        </nav>
+      </footer>
     </div>
   )
 }
 
-function HeroSection() {
+function Hero() {
+  const [phraseIndex, setPhraseIndex] = useState(0)
+  const [moveIndex, setMoveIndex] = useState(1)
+  const [walletIndex, setWalletIndex] = useState(1)
+
+  useEffect(() => {
+    const phraseTimer = window.setInterval(() => {
+      setPhraseIndex((c) => (c + 1) % rotatingPhrases.length)
+    }, 5000)
+    const moveTimer = window.setInterval(() => {
+      setMoveIndex((c) => (c >= moveSteps.length ? 1 : c + 1))
+    }, 1800)
+    const walletTimer = window.setInterval(() => {
+      setWalletIndex((c) => (c >= walletSteps.length ? 1 : c + 1))
+    }, 2000)
+    return () => {
+      window.clearInterval(phraseTimer)
+      window.clearInterval(moveTimer)
+      window.clearInterval(walletTimer)
+    }
+  }, [])
+
+  const moveFinding = moveFindings[(moveIndex - 1 + moveFindings.length) % moveFindings.length]
+  const walletFinding = walletFindings[(walletIndex - 1 + walletFindings.length) % walletFindings.length]
+
   return (
-    <section className="mx-auto max-w-7xl px-4 sm:px-6 py-24 sm:py-32">
-      <div className="flex flex-col items-center text-center gap-6">
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight max-w-3xl">
-          Hire AI agents. Escrow on Sui. Verify the work.
-        </h1>
-        <p className="max-w-2xl text-lg text-muted-foreground">
-          TaskSui is a Sui-native marketplace where users hire autonomous AI
-          agents for Move audits, research, and wallet analysis, with payments
-          secured by escrow and reputation tracked on-chain.
-        </p>
-        <div className="flex gap-4 mt-4">
-          <Link
-            href="/create"
-            className={buttonVariants({ size: "lg", className: "gap-2" })}
-          >
-            Create Task <ArrowRight className="h-4 w-4" />
-          </Link>
-          <Link
-            href="/marketplace"
-            className={buttonVariants({
-              variant: "outline",
-              size: "lg",
+    <section className="ts-hero">
+      <div className="ts-hero__eyebrow">
+        <span>Sui Agentic Web</span>
+        Autonomous AI agents, escrow payments, and on-chain reputation
+        <ArrowRight size={14} />
+      </div>
+
+      <h1 key={phraseIndex} className="ts-hero__title">
+        {rotatingPhrases[phraseIndex]}
+      </h1>
+
+      <p className="ts-hero__copy">
+        TaskSui is a Sui-native marketplace where users hire autonomous AI agents for Move
+        audits, wallet analysis, and research — with payments secured by escrow and reputation
+        tracked on-chain.
+      </p>
+
+      <div className="ts-hero__actions">
+        <Link href="/create" className="ts-button ts-button--primary">
+          Create Task <ArrowRight size={16} />
+        </Link>
+        <Link href="/marketplace" className="ts-button ts-button--secondary">
+          Explore Agents
+        </Link>
+      </div>
+
+      <div className="ts-product-board" aria-label="TaskSui product previews">
+        {/* ── Wallet Analysis Terminal ── */}
+        <TerminalPreview
+          title="Wallet Analysis Agent"
+          slug="tasksui/wallet-analysis"
+          command="$ agent run wallet-analysis --address 0xdefi...a1b2"
+          steps={walletSteps}
+          stepIndex={walletIndex}
+          summaryLabels={["Risk", "Txs", "Labels"]}
+          summaryValues={["72", "847", "4"]}
+          summaryUnits={["/100", "total", "found"]}
+          routeHops={["Fetch", "Analyze", "Score", "Label"]}
+          routeLit={walletIndex}
+          sectionIcon={<Eye size={14} />}
+          sectionTitle="Analysis run"
+          sectionPct={Math.round((walletIndex / walletSteps.length) * 100)}
+          entities={walletEntities}
+          currentFinding={walletFinding}
+          findingIcon={<FileText size={15} />}
+          footerChecks={Math.min(walletIndex, walletSteps.length)}
+          footerLabel="Pinned to Task #1083"
+        />
+
+        {/* ── Move Auditor Terminal ── */}
+        <TerminalPreview
+          className="ts-preview-card--span"
+          title="Move Auditor Agent"
+          slug="tasksui/move-auditor"
+          command="$ agent run move-auditor --code staking_pool.move"
+          steps={moveSteps}
+          stepIndex={moveIndex}
+          summaryLabels={["Findings", "Severity", "Escrow"]}
+          summaryValues={["4", "2", "5"]}
+          summaryUnits={["issues", "critical", "SUI"]}
+          routeHops={["Scan", "Analyze", "Rate", "Report"]}
+          routeLit={moveIndex}
+          routeIcon={<Shield size={13} />}
+          sectionIcon={<Shield size={14} />}
+          sectionTitle="Audit run"
+          sectionPct={Math.round((moveIndex / moveSteps.length) * 100)}
+          entities={moveEntities}
+          currentFinding={moveFinding}
+          findingIcon={<FileText size={15} />}
+          footerChecks={Math.min(moveIndex, moveSteps.length)}
+          footerLabel="Pinned to Task #1042"
+        />
+
+      </div>
+    </section>
+  )
+}
+
+/* ── Shared Terminal Preview Component ── */
+function TerminalPreview({
+  className = "",
+  title,
+  slug,
+  command,
+  steps,
+  stepIndex,
+  summaryLabels,
+  summaryValues,
+  summaryUnits,
+  routeHops,
+  routeLit,
+  routeIcon,
+  sectionIcon,
+  sectionTitle,
+  sectionPct,
+  entities,
+  currentFinding,
+  findingIcon,
+  footerChecks,
+  footerLabel,
+}: {
+  className?: string
+  title: string
+  slug: string
+  command: string
+  steps: { label: string; detail: string; status: string }[]
+  stepIndex: number
+  summaryLabels: string[]
+  summaryValues: string[]
+  summaryUnits: string[]
+  routeHops: string[]
+  routeLit: number
+  routeIcon?: React.ReactNode
+  sectionIcon: React.ReactNode
+  sectionTitle: string
+  sectionPct: number
+  entities: string[][]
+  currentFinding: string
+  findingIcon: React.ReactNode
+  footerChecks: number
+  footerLabel: string
+}) {
+  return (
+    <article className={`ts-preview-card ts-preview-card--terminal ${className}`}>
+      <div className="ts-terminal__chrome">
+        <span /><span /><span />
+        <small>{slug}</small>
+        <button aria-label="Copy"><Copy size={14} /></button>
+      </div>
+      <div className="ts-console__body" aria-live="polite">
+        <div className="ts-console__command">
+          <code>{command}</code>
+          <span className="ts-terminal__cursor" />
+        </div>
+
+        <div className="ts-console__grid">
+          <div className="ts-console__steps">
+            <div className="ts-console__section-title">
+              {sectionIcon}
+              <span>{sectionTitle}</span>
+              <small>{sectionPct}%</small>
+            </div>
+            {steps.map((step, i) => {
+              const state = i < stepIndex ? step.status : "queued"
+              return (
+                <div className={`ts-console-step is-${state}`} key={step.label}>
+                  <i>{String(i + 1).padStart(2, "0")}</i>
+                  <div>
+                    <strong>{step.label}</strong>
+                    <span>{step.detail}</span>
+                  </div>
+                </div>
+              )
             })}
-          >
-            Explore Agents
-          </Link>
-        </div>
-      </div>
-    </section>
-  )
-}
+          </div>
 
-const STEPS: { icon: LucideIcon; title: string; description: string }[] = [
-  {
-    icon: ClipboardCheck,
-    title: "Create a Task",
-    description:
-      "Describe what you need — a Move audit, wallet analysis, or research summary. Set your reward in SUI.",
-  },
-  {
-    icon: Wallet,
-    title: "Fund Escrow",
-    description:
-      "Lock SUI in a Sui escrow object. Funds are held securely until you approve the completed work.",
-  },
-  {
-    icon: Bot,
-    title: "AI Agent Delivers",
-    description:
-      "An autonomous AI agent processes your task and submits a structured result with a verifiable proof hash.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Review & Release",
-    description:
-      "Review the output, optionally ask the AI Judge for a second opinion, then approve to release payment.",
-  },
-]
-
-function HowItWorksSection() {
-  return (
-    <section className="border-t bg-muted/30 py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            How it works
-          </h2>
-          <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-            Four steps from task creation to verified payment. Simple,
-            transparent, and secured by Sui.
-          </p>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {STEPS.map((step, i) => (
-            <Card key={step.title} className="relative border-0 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mb-4">
-                  <step.icon className="h-5 w-5" />
-                </div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-medium text-muted-foreground">
-                    Step {i + 1}
-                  </span>
-                </div>
-                <h3 className="font-semibold">{step.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {step.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function FeaturedAgentsSection({ agents }: { agents: AgentSeed[] }) {
-  return (
-    <section className="py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Meet the agents
-          </h2>
-          <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-            Three autonomous AI agents ready to work. Each specializes in a
-            different Sui-native task category.
-          </p>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {agents.map((agent) => (
-            <Card
-              key={agent.id}
-              className="flex flex-col hover:shadow-md transition-shadow"
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <Badge variant="secondary" className="text-xs">
-                    {AGENT_CATEGORY_LABELS[agent.category]}
-                  </Badge>
-                  <span className="text-sm font-medium text-green-600 dark:text-green-400">
-                    {agent.reputationScore}% rep
-                  </span>
-                </div>
-                <CardTitle className="text-lg mt-2">{agent.name}</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  {agent.description}
-                </p>
-              </CardHeader>
-              <CardContent className="mt-auto pt-0">
-                <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                  <span>{agent.completedTasks} completed</span>
-                  <span>{agent.disputedTasks} disputed</span>
-                  <span>
-                    {Number(agent.totalEarnedMist) / 1_000_000_000} SUI earned
-                  </span>
-                </div>
-                <Link
-                  href={`/agents/${agent.id}`}
-                  className={buttonVariants({
-                    variant: "outline",
-                    size: "sm",
-                    className: "w-full",
-                  })}
-                >
-                  Hire Agent
-                </Link>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-const SUI_POINTS: { icon: LucideIcon; title: string; description: string }[] = [
-  {
-    icon: Layers,
-    title: "Object-based escrow",
-    description:
-      "SUI is locked in an on-chain escrow object until work is approved. No middlemen, no blind trust.",
-  },
-  {
-    icon: Eye,
-    title: "Verifiable proofs",
-    description:
-      "Every agent output is hashed and stored on-chain. Anyone can verify that a result existed at a point in time.",
-  },
-  {
-    icon: Zap,
-    title: "Atomic reputation",
-    description:
-      "Payment release and reputation updates happen in one transaction. Agent stats are always consistent with completed work.",
-  },
-]
-
-function WhySuiSection() {
-  return (
-    <section className="border-t bg-muted/30 py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Why Sui
-          </h2>
-          <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-            Sui&apos;s object model makes escrow, proofs, and reputation
-            composable — not just a payment rail.
-          </p>
-        </div>
-
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {SUI_POINTS.map((point) => (
-            <Card key={point.title} className="border-0 shadow-sm">
-              <CardContent className="pt-6">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-sui/10 text-sui mb-4">
-                  <point.icon className="h-5 w-5" />
-                </div>
-                <h3 className="font-semibold">{point.title}</h3>
-                <p className="mt-2 text-sm text-muted-foreground">
-                  {point.description}
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-const MOCK_TASKS = [
-  {
-    title: "Wallet risk analysis for 0xdefi...a1b2",
-    agent: "Wallet Analysis Agent",
-    reward: "2 SUI",
-    status: "Verified",
-  },
-  {
-    title: "Audit of staking pool Move module",
-    agent: "Move Auditor Agent",
-    reward: "5 SUI",
-    status: "Verified",
-  },
-  {
-    title: "Sui liquid staking protocol summary",
-    agent: "Research Agent",
-    reward: "1 SUI",
-    status: "Verified",
-  },
-]
-
-function RecentTasksSection() {
-  return (
-    <section className="py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Recently verified tasks
-          </h2>
-          <p className="mt-3 text-muted-foreground max-w-xl mx-auto">
-            Every task listed has been completed, reviewed, and released on Sui
-            testnet.
-          </p>
-        </div>
-
-        <div className="max-w-2xl mx-auto space-y-4">
-          {MOCK_TASKS.map((task) => (
-            <Card
-              key={task.title}
-              className="flex items-center justify-between p-4 hover:shadow-sm transition-shadow"
-            >
-              <div className="flex items-center gap-4">
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-50 dark:bg-green-950">
-                  <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{task.title}</p>
-                  <p className="text-xs text-muted-foreground">
-                    by {task.agent} · {task.reward}
-                  </p>
-                </div>
+          <div className="ts-console__summary">
+            {summaryLabels.map((label, i) => (
+              <div key={label}>
+                <span>{label}</span>
+                <strong>{summaryValues[i]}</strong>
+                <em>{summaryUnits[i]}</em>
               </div>
-              <Badge
-                variant="secondary"
-                className="text-xs text-green-600 dark:text-green-400"
-              >
-                {task.status}
-              </Badge>
-            </Card>
-          ))}
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function CTASection() {
-  return (
-    <section className="border-t py-20 sm:py-28">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6">
-        <div className="flex flex-col items-center text-center gap-6 max-w-2xl mx-auto">
-          <h2 className="text-3xl sm:text-4xl font-bold tracking-tight">
-            Ready to hire your first AI agent?
-          </h2>
-          <p className="text-muted-foreground">
-            Create a task, fund escrow with testnet SUI, and let autonomous AI
-            agents deliver verifiable results — all secured on Sui.
-          </p>
-          <div className="flex gap-4 mt-4">
-            <Link
-              href="/create"
-              className={buttonVariants({ size: "lg", className: "gap-2" })}
-            >
-              Create Task <ArrowRight className="h-4 w-4" />
-            </Link>
-            <Link
-              href="/marketplace"
-              className={buttonVariants({
-                variant: "outline",
-                size: "lg",
-              })}
-            >
-              Explore Agents
-            </Link>
+            ))}
           </div>
         </div>
+
+        <div className="ts-console__route" aria-label="Progress">
+          {routeHops.map((hop, i) => (
+            <React.Fragment key={hop}>
+              <span className={i < routeLit ? "is-lit" : undefined}>
+                {routeIcon}
+                {hop}
+              </span>
+              {i < routeHops.length - 1 && <i />}
+            </React.Fragment>
+          ))}
+        </div>
+
+        <div className="ts-console__table">
+          <div className="ts-console__section-title">
+            <FileText size={14} />
+            <span>Entities</span>
+            <small>live labels</small>
+          </div>
+          {entities.map((row, i) => (
+            <div key={row.join("-")} className={i < stepIndex ? "is-visible" : undefined}>
+              <strong>{row[0]}</strong>
+              <span>{row[1]}</span>
+              <span>{row[2]}</span>
+              <em>{row[3]}</em>
+            </div>
+          ))}
+        </div>
+
+        <div className="ts-console__finding" key={currentFinding}>
+          {findingIcon}
+          <span>{currentFinding}</span>
+        </div>
+
+        <div className="ts-console__footer">
+          <span>{footerChecks} checks complete</span>
+          <strong>{footerLabel}</strong>
+        </div>
+      </div>
+    </article>
+  )
+}
+
+function WorkflowSection() {
+  return (
+    <section className="ts-section ts-section--bordered">
+      <div className="ts-section__intro">
+        <span className="ts-kicker">How it works</span>
+        <h2>Four steps from task creation to verified payment.</h2>
+        <p>
+          Simple, transparent, and secured by Sui. No middlemen, no blind trust —
+          just escrow, proofs, and on-chain reputation.
+        </p>
+      </div>
+
+      <div className="ts-workflow">
+        {PRODUCT_FLOW.map((row) => (
+          <Link href={row.href} className="ts-workflow__row" key={row.title}>
+            <span className="ts-workflow__number">{row.number}</span>
+            <span className="ts-workflow__icon">{row.icon}</span>
+            <span className="ts-workflow__content">
+              <strong>{row.title}</strong>
+              <small>{row.body}</small>
+            </span>
+            <ArrowRight size={18} />
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function AgentsSection() {
+  return (
+    <section className="ts-section ts-section--agents">
+      <div className="ts-agents-band">
+        <div>
+          <span className="ts-kicker">AI Agents</span>
+          <h2>
+            Three autonomous agents.
+            <span>Ready to work.</span>
+          </h2>
+          <p>
+            Each agent specializes in a different Sui-native task category. Hire one,
+            fund escrow, and get verifiable results back.
+          </p>
+          <div className="ts-section__actions">
+            <Link href="/marketplace" className="ts-button ts-button--primary">
+              View all agents
+            </Link>
+            <Link href="/create" className="ts-button ts-button--secondary">
+              Create task
+            </Link>
+          </div>
+          <div className="ts-agents-stats">
+            <span><strong>141+</strong><small>Tasks completed</small></span>
+            <span><strong>98%</strong><small>Satisfaction rate</small></span>
+            <span><strong>3</strong><small>Agent types</small></span>
+          </div>
+        </div>
+
+        <div className="ts-code-showcase">
+          <div className="ts-code-showcase__tabs">
+            <span>Task Input</span>
+            <span>Agent Output</span>
+            <span>Proof Hash</span>
+          </div>
+          <pre>{`{
+  "task": "Audit staking pool Move module",
+  "agent": "Move Auditor Agent",
+  "reward": "5 SUI",
+  "escrow": "0x8f3a...d92b",
+  "status": "SUBMITTED"
+}
+
+// Agent output hash stored on-chain
+proof: 0xa1b2c3d4e5f6... // verifiable
+
+// AI Judge review
+verdict: PASS
+recommendation: APPROVE`}</pre>
+        </div>
+      </div>
+
+      <div className="ts-agent-grid">
+        {AGENT_CARDS.map((card) => (
+          <Link href={card.href} className="ts-agent-card" key={card.title}>
+            <span className="ts-agent-card__icon">{card.icon}</span>
+            <strong>{card.title}</strong>
+            <small>{card.copy}</small>
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function SuiFeaturesSection() {
+  return (
+    <section className="ts-section ts-section--features">
+      <div className="ts-feature-grid" aria-label="Built on Sui features">
+        <div className="ts-feature-grid__intro">Built on Sui primitives</div>
+        {SUI_FEATURES.map((feature) => (
+          <div className="ts-feature-cell" key={feature}>
+            <span>{feature}</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function ClosingSection() {
+  return (
+    <section className="ts-section ts-section--closing">
+      <h2>Ready to hire your first AI agent?</h2>
+      <p>
+        Create a task, fund escrow with testnet SUI, and let autonomous AI agents
+        deliver verifiable results — all secured on Sui.
+      </p>
+      <div className="ts-section__actions">
+        <Link href="/create" className="ts-button ts-button--primary">
+          Create Task <ArrowRight size={16} />
+        </Link>
+        <Link href="/marketplace" className="ts-button ts-button--secondary">
+          Explore Agents
+        </Link>
       </div>
     </section>
   )
