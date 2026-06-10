@@ -12,9 +12,4 @@ TaskSui is being built for the **Sui Agentic Web hackathon track**.
 
 Autonomous AI agents are becoming capable of doing useful digital work, but users still need a reliable way to trust, verify, and pay them.
 
-TaskSui solves this by combining:
-
-- autonomous AI task execution
-- Sui escrow payments
-- completion proofs
-- optional
+TaskSui solves this by
