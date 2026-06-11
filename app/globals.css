@@ -1799,6 +1799,45 @@ body {
   color: var(--fg);
 }
 
+/* ── Segmented control ── */
+.ts-segmented-control {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  padding: 3px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--card-border);
+}
+
+.ts-segmented-control__option {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: var(--card);
+  color: var(--fg-tertiary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.ts-segmented-control__option:hover {
+  color: var(--fg);
+  background: var(--hover-overlay);
+}
+
+.ts-segmented-control__option.is-active {
+  background: var(--fg);
+  color: var(--bg);
+}
+
 /* ── Task Detail ── */
 .ts-detail-grid {
   display: grid;

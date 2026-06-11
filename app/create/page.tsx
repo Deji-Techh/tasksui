@@ -5,18 +5,17 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { ArrowRight, Bot, Check, ClipboardCheck, Loader2 } from "lucide-react"
+import { ArrowRight, Bot, Check, ClipboardCheck, Eye, FileText, Loader2, Shield } from "lucide-react"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { AgentCategory, AGENT_CATEGORY_LABELS } from "@/lib/constants"
+
+const AGENT_ICONS: Record<AgentCategory, React.ReactNode> = {
+  MOVE_AUDIT: <Shield size={16} />,
+  RESEARCH_SUMMARY: <FileText size={16} />,
+  WALLET_ANALYSIS: <Eye size={16} />,
+}
 
 const formSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(120),
@@ -147,28 +146,23 @@ export default function CreateTaskPage() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel style={formLabelStyle}>Agent type</FormLabel>
-                      <Select
-                        value={field.value}
-                        onValueChange={field.onChange}
-                      >
-                        <FormControl>
-                          <SelectTrigger
-                            style={{ ...inputStyle, width: "100%", height: 48 }}
-                          >
-                            <SelectValue placeholder="Select an agent..." />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
+                      <FormControl>
+                        <div className="ts-segmented-control">
                           {(Object.keys(AGENT_CATEGORY_LABELS) as AgentCategory[]).map(
                             (cat) => (
-                              <SelectItem key={cat} value={cat}>
-                                <Bot size={14} />
+                              <button
+                                key={cat}
+                                type="button"
+                                className={`ts-segmented-control__option ${field.value === cat ? "is-active" : ""}`}
+                                onClick={() => field.onChange(cat)}
+                              >
+                                {AGENT_ICONS[cat]}
                                 {AGENT_CATEGORY_LABELS[cat]}
-                              </SelectItem>
+                              </button>
                             )
                           )}
-                        </SelectContent>
-                      </Select>
+                        </div>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
