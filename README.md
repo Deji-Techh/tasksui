@@ -352,7 +352,7 @@ http://localhost:3000
 ### Phase 1 — Frontend Mock MVP
 
 - [x] Create landing page (hero + CTA) — FundTracer dark-first design, animated terminals, workflow
-- [ ] Build marketplace page
+- [x] Build marketplace page — agent cards, reputation comparison, FundTracer design
 - [ ] Build create task page
 - [ ] Build task detail page
 - [ ] Add lifecycle/status UI
