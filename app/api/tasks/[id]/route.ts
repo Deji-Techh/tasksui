@@ -22,24 +22,32 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const task = await prisma.task.findUnique({
-    where: { id },
-    include: { agent: true },
-  })
-  if (!task) {
-    return NextResponse.json({ error: "Task not found" }, { status: 404 })
+  try {
+    const { id } = await params
+    const task = await prisma.task.findUnique({
+      where: { id },
+      include: { agent: true },
+    })
+    if (!task) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 })
+    }
+    return NextResponse.json(task)
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to fetch task" },
+      { status: 500 },
+    )
   }
-  return NextResponse.json(task)
 }
 
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params
-  const body = await request.json()
-  const { action, creatorAddress } = body
+  try {
+    const { id } = await params
+    const body = await request.json()
+    const { action, creatorAddress } = body
 
   const task = await prisma.task.findUnique({ where: { id } })
   if (!task) {
@@ -291,7 +299,13 @@ export async function PATCH(
     default:
       return NextResponse.json(
         { error: `Unknown action: ${action}` },
-        { status: 400 }
+        { status: 400 },
       )
+  }
+  } catch (err) {
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Action failed" },
+      { status: 500 },
+    )
   }
 }
