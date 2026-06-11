@@ -90,14 +90,19 @@ export default function CreateTaskClient() {
       if (!result) {
         throw new Error("Sui transaction was not signed or failed")
       }
+      const txDigest = extractDigest(result)
+      const suiTaskId = extractTaskObjectId(result)
+      if (!suiTaskId) {
+        throw new Error("Could not find created Sui task object — object extraction failed")
+      }
       const confirmRes = await fetch(`/api/tasks/${task.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action: "confirm_chain",
           creatorAddress: address,
-          txDigest: extractDigest(result),
-          suiTaskId: extractTaskObjectId(result),
+          txDigest,
+          suiTaskId,
         }),
       })
       if (!confirmRes.ok) {
