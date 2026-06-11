@@ -5,44 +5,51 @@ module tasksui::marketplace_tests {
     use sui::test_scenario::{Self, Scenario, next_tx, ctx};
     use sui::coin;
     use sui::sui::SUI;
-    use sui::test_utils;
 
-    // Helper to mint test SUI coins
     fun mint_sui(amount: u64, scenario: &mut Scenario): coin::Coin<SUI> {
-        let ctx = next_tx(scenario);
-        coin::mint_for_testing<SUI>(amount, ctx)
+        coin::mint_for_testing<SUI>(amount, ctx(scenario))
     }
 
     #[test]
     fun test_init() {
-        let scenario = test_scenario::begin(@0xA);
+        let mut scenario = test_scenario::begin(@0xA);
         {
-            marketplace::init(ctx(&mut scenario));
+            marketplace::init_for_testing(ctx(&mut scenario));
         };
         test_scenario::end(scenario);
     }
 
     #[test]
     fun test_register_agent() {
-        let sender = @0xAGENT;
-        let scenario = test_scenario::begin(sender);
-        {
-            marketplace::init(ctx(&mut scenario));
+        let sender = @0xB;
+        let mut scenario = test_scenario::begin(sender);
 
-            let marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+        // Tx 0: init marketplace
+        {
+            marketplace::init_for_testing(ctx(&mut scenario));
+        };
+        next_tx(&mut scenario, sender);
+
+        // Tx 1: register agent
+        {
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
             marketplace::register_agent(
                 &mut marketplace,
                 b"Move Auditor".to_string(),
-                task_types::category_move_audit(),
+                task_types::status_funded(),
                 ctx(&mut scenario),
             );
             test_scenario::return_shared(marketplace);
+        };
+        next_tx(&mut scenario, sender);
 
-            let agent = test_scenario::take_shared<AgentProfile>(&scenario);
-            assert!(agent.name == b"Move Auditor".to_string(), 0);
-            assert!(agent.category == task_types::category_move_audit(), 0);
-            assert!(agent.reputation_score == 100, 0);
-            assert!(agent.completed_tasks == 0, 0);
+        // Tx 2: verify agent
+        {
+            let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
+            assert!(*marketplace::agent_name(&agent) == b"Move Auditor".to_string(), 0);
+            assert!(marketplace::agent_category(&agent) == 1, 0);
+            assert!(marketplace::agent_reputation_score(&agent) == 100, 0);
+            assert!(marketplace::agent_completed_tasks(&agent) == 0, 0);
             test_scenario::return_shared(agent);
         };
         test_scenario::end(scenario);
@@ -50,144 +57,141 @@ module tasksui::marketplace_tests {
 
     #[test]
     fun test_create_task_and_assign_agent() {
-        let creator = @0xCREATOR;
-        let agent_addr = @0xAGENT;
-        let reward = 5_000_000_000; // 5 SUI in MIST
+        let creator = @0xC;
+        let reward = 5_000_000_000;
 
-        let scenario = test_scenario::begin(creator);
+        let mut scenario = test_scenario::begin(creator);
+
+        // Tx 0: init marketplace
         {
-            marketplace::init(ctx(&mut scenario));
+            marketplace::init_for_testing(ctx(&mut scenario));
+        };
+        next_tx(&mut scenario, creator);
 
-            // Register agent
-            let marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+        // Tx 1: register agent
+        {
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
             marketplace::register_agent(
                 &mut marketplace,
                 b"Move Auditor".to_string(),
-                task_types::category_move_audit(),
+                1,
                 ctx(&mut scenario),
             );
             test_scenario::return_shared(marketplace);
+        };
+        next_tx(&mut scenario, creator);
 
-            // Create task with escrow
+        // Tx 2: create task with escrow
+        {
             let payment = mint_sui(reward, &mut scenario);
-            let marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
             let desc_hash = b"task-hash-001".to_string().into_bytes();
 
             marketplace::create_task(
                 &mut marketplace,
                 desc_hash,
-                task_types::category_move_audit(),
+                1,
                 reward,
                 payment,
                 ctx(&mut scenario),
             );
             test_scenario::return_shared(marketplace);
-
-            let task = test_scenario::take_shared<Task>(&scenario);
-            assert!(task.status == task_types::status_funded(), 0);
-            assert!(task.reward == reward, 0);
-            assert!(task.creator == creator, 0);
-            test_scenario::return_shared(task);
         };
+        next_tx(&mut scenario, creator);
 
-        // Assign agent (next transaction, same creator)
+        // Tx 3: verify task
         {
-            let task = test_scenario::take_shared<Task>(&scenario);
-            let agent = test_scenario::take_shared<AgentProfile>(&scenario);
-
-            marketplace::assign_agent(
-                &mut task,
-                &agent,
-                ctx(&mut scenario),
-            );
-
+            let mut task = test_scenario::take_shared<Task>(&scenario);
+            assert!(marketplace::get_status(&task) == task_types::status_funded(), 0);
+            assert!(marketplace::get_reward(&task) == reward, 0);
+            assert!(marketplace::get_creator(&task) == creator, 0);
             test_scenario::return_shared(task);
-            test_scenario::return_shared(agent);
         };
         test_scenario::end(scenario);
     }
 
     #[test]
     fun test_full_lifecycle() {
-        let creator = @0xCREATOR;
-        let agent_addr = @0xAGENT;
-        let reward = 5_000_000_000; // 5 SUI
+        let creator = @0xC;
+        let agent_addr = @0xB;
+        let reward = 5_000_000_000;
 
-        let scenario = test_scenario::begin(agent_addr);
+        // Start as agent_addr
+        let mut scenario = test_scenario::begin(agent_addr);
+
+        // Tx 0: init marketplace
         {
-            marketplace::init(ctx(&mut scenario));
+            marketplace::init_for_testing(ctx(&mut scenario));
         };
+        next_tx(&mut scenario, agent_addr);
 
-        // Register agent
+        // Tx 1: register agent
         {
-            let marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
             marketplace::register_agent(
                 &mut marketplace,
                 b"Move Auditor".to_string(),
-                task_types::category_move_audit(),
+                1,
                 ctx(&mut scenario),
             );
             test_scenario::return_shared(marketplace);
         };
+        next_tx(&mut scenario, creator);
 
-        // Creator creates and funds task
+        // Tx 2: creator creates and funds task
         {
-            next_tx(&mut scenario, creator);
             let payment = mint_sui(reward, &mut scenario);
-            let marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
             let desc_hash = b"task-hash-001".to_string().into_bytes();
 
             marketplace::create_task(
                 &mut marketplace,
                 desc_hash,
-                task_types::category_move_audit(),
+                1,
                 reward,
                 payment,
                 ctx(&mut scenario),
             );
             test_scenario::return_shared(marketplace);
         };
+        next_tx(&mut scenario, creator);
 
-        // Creator assigns agent
+        // Tx 3: creator assigns agent
         {
-            let task = test_scenario::take_shared<Task>(&scenario);
-            let agent = test_scenario::take_shared<AgentProfile>(&scenario);
-
-            // Verify we can't skip from FUNDED to submitted
-            let proof = b"proof-hash".to_string().into_bytes();
-            // submit_completion would fail here because task isn't RUNNING
+            let mut task = test_scenario::take_shared<Task>(&scenario);
+            let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
 
             marketplace::assign_agent(&mut task, &agent, ctx(&mut scenario));
-            assert!(task.status == task_types::status_running(), 0);
+            assert!(marketplace::get_status(&task) == task_types::status_running(), 0);
 
             test_scenario::return_shared(task);
             test_scenario::return_shared(agent);
         };
+        next_tx(&mut scenario, agent_addr);
 
-        // Agent submits completion
+        // Tx 4: agent submits completion
         {
-            next_tx(&mut scenario, agent_addr);
-            let task = test_scenario::take_shared<Task>(&scenario);
-            let agent = test_scenario::take_shared<AgentProfile>(&scenario);
+            let mut task = test_scenario::take_shared<Task>(&scenario);
+            let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
             let proof = b"proof-hash-abc123".to_string().into_bytes();
 
-            marketplace::submit_completion(&mut task, &mut agent, proof, ctx(&mut scenario));
-            assert!(task.status == task_types::status_submitted(), 0);
+            marketplace::submit_completion(&mut task, &agent, proof);
+            assert!(marketplace::get_status(&task) == task_types::status_submitted(), 0);
 
             test_scenario::return_shared(task);
             test_scenario::return_shared(agent);
         };
+        next_tx(&mut scenario, creator);
 
-        // Creator approves and releases escrow
+        // Tx 5: creator approves and releases escrow
         {
-            next_tx(&mut scenario, creator);
-            let task = test_scenario::take_shared<Task>(&scenario);
-            let agent = test_scenario::take_shared<AgentProfile>(&scenario);
+            let mut task = test_scenario::take_shared<Task>(&scenario);
+            let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
 
             marketplace::approve_and_release(&mut task, &mut agent, ctx(&mut scenario));
-            assert!(task.status == task_types::status_released(), 0);
-            assert!(agent.completed_tasks == 1, 0);
-            assert!(agent.total_earned == reward, 0);
+            assert!(marketplace::get_status(&task) == task_types::status_released(), 0);
+            assert!(marketplace::agent_completed_tasks(&agent) == 1, 0);
+            assert!(marketplace::agent_total_earned(&agent) == reward, 0);
 
             test_scenario::return_shared(task);
             test_scenario::return_shared(agent);
@@ -197,32 +201,42 @@ module tasksui::marketplace_tests {
 
     #[test]
     fun test_cancel_task() {
-        let creator = @0xCREATOR;
+        let creator = @0xC;
         let reward = 5_000_000_000;
 
-        let scenario = test_scenario::begin(creator);
-        {
-            marketplace::init(ctx(&mut scenario));
+        let mut scenario = test_scenario::begin(creator);
 
+        // Tx 0: init marketplace
+        {
+            marketplace::init_for_testing(ctx(&mut scenario));
+        };
+        next_tx(&mut scenario, creator);
+
+        // Tx 1: create task
+        {
             let payment = mint_sui(reward, &mut scenario);
-            let marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
             let desc_hash = b"task-hash".to_string().into_bytes();
 
             marketplace::create_task(
                 &mut marketplace,
                 desc_hash,
-                task_types::category_move_audit(),
+                1,
                 reward,
                 payment,
                 ctx(&mut scenario),
             );
             test_scenario::return_shared(marketplace);
+        };
+        next_tx(&mut scenario, creator);
 
-            let task = test_scenario::take_shared<Task>(&scenario);
-            assert!(task.status == task_types::status_funded(), 0);
+        // Tx 2: cancel task
+        {
+            let mut task = test_scenario::take_shared<Task>(&scenario);
+            assert!(marketplace::get_status(&task) == task_types::status_funded(), 0);
 
             marketplace::cancel_task(&mut task, ctx(&mut scenario));
-            assert!(task.status == task_types::status_cancelled(), 0);
+            assert!(marketplace::get_status(&task) == task_types::status_cancelled(), 0);
 
             test_scenario::return_shared(task);
         };
@@ -231,76 +245,80 @@ module tasksui::marketplace_tests {
 
     #[test]
     fun test_dispute_task() {
-        let creator = @0xCREATOR;
-        let agent_addr = @0xAGENT;
+        let creator = @0xC;
+        let agent_addr = @0xB;
         let reward = 5_000_000_000;
 
-        let scenario = test_scenario::begin(agent_addr);
-        {
-            marketplace::init(ctx(&mut scenario));
-        };
+        let mut scenario = test_scenario::begin(agent_addr);
 
-        // Register agent
+        // Tx 0: init marketplace
         {
-            let marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+            marketplace::init_for_testing(ctx(&mut scenario));
+        };
+        next_tx(&mut scenario, agent_addr);
+
+        // Tx 1: register agent
+        {
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
             marketplace::register_agent(
                 &mut marketplace,
                 b"Move Auditor".to_string(),
-                task_types::category_move_audit(),
+                1,
                 ctx(&mut scenario),
             );
             test_scenario::return_shared(marketplace);
         };
+        next_tx(&mut scenario, creator);
 
-        // Create task
+        // Tx 2: create task
         {
-            next_tx(&mut scenario, creator);
             let payment = mint_sui(reward, &mut scenario);
-            let marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
             let desc_hash = b"task-hash".to_string().into_bytes();
 
             marketplace::create_task(
                 &mut marketplace,
                 desc_hash,
-                task_types::category_move_audit(),
+                1,
                 reward,
                 payment,
                 ctx(&mut scenario),
             );
             test_scenario::return_shared(marketplace);
         };
+        next_tx(&mut scenario, creator);
 
-        // Assign agent
+        // Tx 3: assign agent
         {
-            let task = test_scenario::take_shared<Task>(&scenario);
-            let agent = test_scenario::take_shared<AgentProfile>(&scenario);
+            let mut task = test_scenario::take_shared<Task>(&scenario);
+            let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
             marketplace::assign_agent(&mut task, &agent, ctx(&mut scenario));
             test_scenario::return_shared(task);
             test_scenario::return_shared(agent);
         };
+        next_tx(&mut scenario, agent_addr);
 
-        // Submit completion
+        // Tx 4: submit completion
         {
-            next_tx(&mut scenario, agent_addr);
-            let task = test_scenario::take_shared<Task>(&scenario);
-            let agent = test_scenario::take_shared<AgentProfile>(&scenario);
+            let mut task = test_scenario::take_shared<Task>(&scenario);
+            let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
             let proof = b"bad-proof".to_string().into_bytes();
-            marketplace::submit_completion(&mut task, &mut agent, proof, ctx(&mut scenario));
+            marketplace::submit_completion(&mut task, &agent, proof);
             test_scenario::return_shared(task);
             test_scenario::return_shared(agent);
         };
+        next_tx(&mut scenario, creator);
 
-        // Creator disputes
+        // Tx 5: creator disputes
         {
-            next_tx(&mut scenario, creator);
-            let task = test_scenario::take_shared<Task>(&scenario);
-            let agent = test_scenario::take_shared<AgentProfile>(&scenario);
-            let initial_score = agent.reputation_score;
+            let mut task = test_scenario::take_shared<Task>(&scenario);
+            let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
+            let initial_score = marketplace::agent_reputation_score(&agent);
 
             marketplace::mark_disputed(&mut task, &mut agent, ctx(&mut scenario));
-            assert!(task.status == task_types::status_disputed(), 0);
-            assert!(agent.disputed_tasks == 1, 0);
-            assert!(agent.reputation_score < initial_score, 0);
+            assert!(marketplace::get_status(&task) == task_types::status_disputed(), 0);
+            assert!(marketplace::agent_disputed_tasks(&agent) == 1, 0);
+            assert!(marketplace::agent_reputation_score(&agent) < initial_score, 0);
 
             test_scenario::return_shared(task);
             test_scenario::return_shared(agent);
@@ -310,7 +328,6 @@ module tasksui::marketplace_tests {
 
     #[test]
     fun test_status_transitions() {
-        // Verify the can_transition helper covers all valid paths
         assert!(task_types::can_transition(
             task_types::status_funded(),
             task_types::status_running()

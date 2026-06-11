@@ -239,6 +239,7 @@ export default async function TaskDetailPage({
                 suiTaskId={task.suiTaskId}
                 escrowId={task.escrowId}
                 agentId={task.agent?.suiObjectId ?? null}
+                agentDbId={task.agent?.id ?? null}
                 description={task.description}
                 agentCategory={task.agentCategory}
                 rewardSui={Number(task.rewardMist) / 1_000_000_000}

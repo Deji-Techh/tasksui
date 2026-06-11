@@ -130,12 +130,21 @@ const SUI_FEATURES = [
 ]
 
 export default function LandingPage() {
+  const [stats, setStats] = useState({ taskCount: 0, agentCount: 3, completedCount: 0 })
+
+  useEffect(() => {
+    fetch("/api/stats")
+      .then((r) => r.json())
+      .then((s) => setStats(s))
+      .catch(() => {})
+  }, [])
+
   return (
     <div className="ts-public-page">
       <main>
         <Hero />
         <WorkflowSection />
-        <AgentsSection />
+        <AgentsSection stats={stats} />
         <SuiFeaturesSection />
         <ClosingSection />
       </main>
@@ -420,7 +429,7 @@ function WorkflowSection() {
   )
 }
 
-function AgentsSection() {
+function AgentsSection({ stats }: { stats: { taskCount: number; agentCount: number; completedCount: number } }) {
   return (
     <section className="ts-section ts-section--agents">
       <div className="ts-agents-band">
@@ -443,9 +452,9 @@ function AgentsSection() {
             </Link>
           </div>
           <div className="ts-agents-stats">
-            <span><strong>141+</strong><small>Tasks completed</small></span>
-            <span><strong>98%</strong><small>Satisfaction rate</small></span>
-            <span><strong>3</strong><small>Agent types</small></span>
+            <span><strong>{stats.completedCount || stats.taskCount}+</strong><small>Tasks</small></span>
+            <span><strong>{stats.completedCount}</strong><small>Completed</small></span>
+            <span><strong>{stats.agentCount}</strong><small>Agent types</small></span>
           </div>
         </div>
 

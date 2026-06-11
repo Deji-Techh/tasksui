@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Check, X, Gavel, Wallet, Ban } from "lucide-react"
+import { Loader2, Check, X, Gavel, Wallet, Ban, Plus, ExternalLink, ArrowRight, Trash2 } from "lucide-react"
 import { useSuiTransaction } from "@/components/sui/useSuiTransaction"
 import { TaskStatus } from "@/lib/constants"
 
@@ -52,7 +52,8 @@ function extractTaskObjectId(result: unknown): string | null {
 export function TaskActions({
   taskId, status, suiTaskId, escrowId, agentId,
   description, agentCategory, rewardSui,
-}: Props) {
+  agentDbId,
+}: Props & { agentDbId?: string | null }) {
   const router = useRouter()
   const { signAndExecute, isSigning, error, isConnected, address } = useSuiTransaction()
   const [actionLoading, setActionLoading] = useState<string | null>(null)
@@ -160,6 +161,10 @@ export function TaskActions({
     await callApi("cancel", { txDigest: extractDigest(result) })
   })
 
+  const handleDiscard = () => runAction("discard", async () => {
+    await callApi("discard")
+  })
+
   const btn = (key: string) => actionLoading === key || isSigning
 
   if (!isConnected) {
@@ -201,9 +206,9 @@ export function TaskActions({
               disabled={btn("fund")} style={{ width: "100%", justifyContent: "center" }}>
               {btn("fund") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><Wallet size={14} /> Fund Escrow</>}
             </button>
-            <button className="ts-button ts-button--secondary"
-              disabled style={{ width: "100%", justifyContent: "center" }}>
-              <Ban size={14} /> Cancel
+            <button className="ts-button ts-button--secondary" onClick={handleDiscard}
+              disabled={btn("discard")} style={{ width: "100%", justifyContent: "center" }}>
+              {btn("discard") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><Trash2 size={14} /> Discard</>}
             </button>
           </>
         )}
@@ -260,6 +265,58 @@ export function TaskActions({
               disabled={btn("reject")} style={{ width: "100%", justifyContent: "center" }}>
               {btn("reject") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><X size={14} /> Reject & Refund</>}
             </button>
+          </>
+        )}
+
+        {/* ── RELEASED ── */}
+        {status === TaskStatus.RELEASED && (
+          <>
+            {suiTaskId && (
+              <a href={`https://testnet.suivision.xyz/object/${suiTaskId}`} target="_blank" rel="noopener noreferrer"
+                className="ts-button ts-button--secondary" style={{ width: "100%", justifyContent: "center", textDecoration: "none" }}>
+                <ExternalLink size={14} /> View Proof on Explorer
+              </a>
+            )}
+            {agentDbId && (
+              <a href={`/agents/${agentDbId}`}
+                className="ts-button ts-button--secondary" style={{ width: "100%", justifyContent: "center", textDecoration: "none" }}>
+                <ArrowRight size={14} /> View Agent
+              </a>
+            )}
+            <a href="/create"
+              className="ts-button ts-button--primary" style={{ width: "100%", justifyContent: "center", textDecoration: "none" }}>
+              <Plus size={14} /> Create Similar Task
+            </a>
+          </>
+        )}
+
+        {/* ── DISPUTED ── */}
+        {status === TaskStatus.DISPUTED && (
+          <>
+            <button className="ts-button ts-button--primary" onClick={handleRunJudge}
+              disabled={btn("run_judge")} style={{ width: "100%", justifyContent: "center" }}>
+              {btn("run_judge") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><Gavel size={14} /> Ask AI Judge</>}
+            </button>
+            <button className="ts-button ts-button--secondary" onClick={handleApprove}
+              disabled={btn("approve")} style={{ width: "100%", justifyContent: "center" }}>
+              {btn("approve") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><Check size={14} /> Approve Anyway</>}
+            </button>
+          </>
+        )}
+
+        {/* ── CANCELLED ── */}
+        {status === TaskStatus.CANCELLED && (
+          <>
+            <a href="/create"
+              className="ts-button ts-button--primary" style={{ width: "100%", justifyContent: "center", textDecoration: "none" }}>
+              <Plus size={14} /> Create New Task
+            </a>
+            {suiTaskId && (
+              <a href={`https://testnet.suivision.xyz/object/${suiTaskId}`} target="_blank" rel="noopener noreferrer"
+                className="ts-button ts-button--secondary" style={{ width: "100%", justifyContent: "center", textDecoration: "none" }}>
+                <ExternalLink size={14} /> View Refund Tx
+              </a>
+            )}
           </>
         )}
       </div>

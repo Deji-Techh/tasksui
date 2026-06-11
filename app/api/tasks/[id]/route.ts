@@ -276,6 +276,18 @@ export async function PATCH(
       return NextResponse.json(updated)
     }
 
+    // ── discard: delete a PENDING_CHAIN task (not on-chain yet) ──
+    case "discard": {
+      if (task.status !== "PENDING_CHAIN") {
+        return NextResponse.json(
+          { error: "Only pending tasks can be discarded" },
+          { status: 400 },
+        )
+      }
+      await prisma.task.delete({ where: { id } })
+      return NextResponse.json({ ok: true })
+    }
+
     // ── cancel: verify on-chain tx, then set CANCELLED ──
     case "cancel": {
       if (task.status !== "FUNDED") {

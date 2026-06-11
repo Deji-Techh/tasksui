@@ -108,6 +108,11 @@ module tasksui::marketplace {
         transfer::share_object(marketplace);
     }
 
+    #[test_only]
+    public fun init_for_testing(ctx: &mut TxContext) {
+        init(ctx)
+    }
+
     // ============================================================
     // Agent registration
     // ============================================================
@@ -367,6 +372,21 @@ module tasksui::marketplace {
             task_id: object::id(task).to_address(),
         });
     }
+
+    // ============================================================
+    // Getters for tests and off-chain verification
+    // ============================================================
+    public fun get_status(task: &Task): u8 { task.status }
+    public fun get_creator(task: &Task): address { task.creator }
+    public fun get_reward(task: &Task): u64 { task.reward }
+    public fun get_agent_id(task: &Task): address { task.agent_id }
+
+    public fun agent_completed_tasks(agent: &AgentProfile): u64 { agent.completed_tasks }
+    public fun agent_disputed_tasks(agent: &AgentProfile): u64 { agent.disputed_tasks }
+    public fun agent_total_earned(agent: &AgentProfile): u64 { agent.total_earned }
+    public fun agent_reputation_score(agent: &AgentProfile): u64 { agent.reputation_score }
+    public fun agent_name(agent: &AgentProfile): &String { &agent.name }
+    public fun agent_category(agent: &AgentProfile): u8 { agent.category }
 
     // ============================================================
     // Mark task as disputed

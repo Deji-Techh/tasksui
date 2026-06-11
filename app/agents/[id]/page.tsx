@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { ArrowLeft, Bot, Shield, Eye, FileText, ExternalLink } from "lucide-react"
+import { ArrowLeft, ArrowRight, Bot, Shield, Eye, FileText, ExternalLink } from "lucide-react"
 import { AGENT_CATEGORY_LABELS } from "@/lib/constants"
 import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
@@ -147,6 +147,14 @@ export default async function AgentDetailPage({
 
             <div>
               <div className="ts-detail-card">
+                <Link
+                  href={`/create?category=${encodeURIComponent(agent.category)}`}
+                  className="ts-button ts-button--primary"
+                  style={{ width: "100%", justifyContent: "center", textDecoration: "none", marginBottom: 16 }}
+                >
+                  Hire this Agent <ArrowRight size={14} />
+                </Link>
+
                 <h3>Recent Tasks</h3>
                 {agent.tasks.length === 0 ? (
                   <p style={{ color: "var(--fg-tertiary)", fontSize: "14px" }}>

@@ -16,20 +16,38 @@ type Task = {
   agent: { name: string; suiObjectId: string } | null
 }
 
+const TABS: { key: string; label: string; statuses: string[] }[] = [
+  { key: "created", label: "Created", statuses: [TaskStatus.PENDING_CHAIN, TaskStatus.FUNDED, TaskStatus.RUNNING] },
+  { key: "in_review", label: "In Review", statuses: [TaskStatus.SUBMITTED, TaskStatus.JUDGE_REVIEWED] },
+  { key: "completed", label: "Completed", statuses: [TaskStatus.RELEASED] },
+  { key: "disputed", label: "Disputed", statuses: [TaskStatus.DISPUTED] },
+  { key: "cancelled", label: "Cancelled", statuses: [TaskStatus.CANCELLED] },
+]
+
 export default function DashboardClient() {
   const { isConnected, address } = useSuiTransaction()
   const [tasks, setTasks] = useState<Task[]>([])
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState<string | null>(null)
+  const [activeTab, setActiveTab] = useState("created")
 
   useEffect(() => {
     const url = isConnected && address
       ? `/api/tasks?creatorAddress=${address}`
       : "/api/tasks"
+    setFetchError(null)
     fetch(url)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error(`Server error (${r.status})`)
+        return r.json()
+      })
       .then(setTasks)
+      .catch((err) => setFetchError(err instanceof Error ? err.message : "Failed to load tasks"))
       .finally(() => setLoading(false))
   }, [isConnected, address])
+
+  const activeStatuses: string[] = TABS.find((t) => t.key === activeTab)?.statuses ?? []
+  const filtered = tasks.filter((t) => activeStatuses.includes(t.status))
 
   return (
     <div className="ts-public-page">
@@ -63,11 +81,55 @@ export default function DashboardClient() {
             </Link>
           </div>
 
+          {/* Tabs */}
+          <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid var(--card-border)", paddingBottom: 0 }}>
+            {TABS.map((tab) => {
+              const count = tasks.filter((t) => tab.statuses.includes(t.status)).length
+              return (
+                <button
+                  key={tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                  style={{
+                    padding: "10px 16px",
+                    border: "none",
+                    borderBottom: activeTab === tab.key ? "2px solid var(--accent)" : "2px solid transparent",
+                    background: "none",
+                    color: activeTab === tab.key ? "var(--fg)" : "var(--fg-tertiary)",
+                    fontSize: "var(--text-sm)",
+                    fontWeight: activeTab === tab.key ? 600 : 400,
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  {tab.label}
+                  {count > 0 && (
+                    <span style={{
+                      marginLeft: 6,
+                      padding: "1px 6px",
+                      borderRadius: "var(--radius-full)",
+                      background: activeTab === tab.key ? "var(--accent-bg)" : "var(--bg-secondary)",
+                      fontSize: "var(--text-xs)",
+                    }}>
+                      {count}
+                    </span>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+
           {loading ? (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
             </div>
-          ) : tasks.length === 0 ? (
+          ) : fetchError ? (
+            <div style={{
+              textAlign: "center", padding: "60px 20px",
+              color: "var(--status-red)", fontSize: "var(--text-sm)",
+            }}>
+              Failed to load tasks: {fetchError}
+            </div>
+          ) : filtered.length === 0 ? (
             <div
               style={{
                 textAlign: "center",
@@ -78,20 +140,23 @@ export default function DashboardClient() {
               }}
             >
               <h3 style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 500 }}>
-                No tasks yet
+                No {TABS.find((t) => t.key === activeTab)?.label.toLowerCase()} tasks
               </h3>
               <p style={{ margin: "0 auto", maxWidth: 400 }}>
-                Create your first task to hire an AI agent. Payment is held in
-                escrow until you approve the work.
+                {activeTab === "created"
+                  ? "Create your first task to hire an AI agent. Payment is held in escrow until you approve the work."
+                  : "Tasks in this category will appear here."}
               </p>
-              <div
-                className="ts-section__actions"
-                style={{ justifyContent: "center", marginTop: 24 }}
-              >
-                <Link href="/create" className="ts-button ts-button--primary">
-                  Create Task <ArrowRight size={16} />
-                </Link>
-              </div>
+              {activeTab === "created" && (
+                <div
+                  className="ts-section__actions"
+                  style={{ justifyContent: "center", marginTop: 24 }}
+                >
+                  <Link href="/create" className="ts-button ts-button--primary">
+                    Create Task <ArrowRight size={16} />
+                  </Link>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{ display: "grid", gap: 8 }}>
@@ -115,7 +180,7 @@ export default function DashboardClient() {
                 <span />
               </div>
 
-              {tasks.map((task) => (
+              {filtered.map((task) => (
                 <Link
                   key={task.id}
                   href={`/tasks/${task.id}`}

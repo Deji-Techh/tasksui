@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -24,9 +24,16 @@ const CATEGORY_MAP: Record<string, number> = {
   WALLET_ANALYSIS: 2,
 }
 
+const CATEGORY_INPUT_LABELS: Record<string, { label: string; placeholder: string }> = {
+  MOVE_AUDIT: { label: "Move code", placeholder: "Paste the Sui Move source code to audit..." },
+  RESEARCH_SUMMARY: { label: "Research input", placeholder: "Paste the docs, protocol description, or technical text to summarize..." },
+  WALLET_ANALYSIS: { label: "Wallet address", placeholder: "0x..." },
+}
+
 const formSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters").max(120),
   description: z.string().min(10, "Describe your task in at least 10 characters").max(2000),
+  inputText: z.string().max(5000).optional(),
   agentCategory: z.enum(
     [AgentCategory.MOVE_AUDIT, AgentCategory.RESEARCH_SUMMARY, AgentCategory.WALLET_ANALYSIS]
   ),
@@ -52,29 +59,43 @@ function extractTaskObjectId(result: unknown): string | null {
 
 export default function CreateTaskClient() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signAndExecute, isSigning, error: txError, isConnected, address } = useSuiTransaction()
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+
+  const preselectedCategory = searchParams.get("category") as AgentCategory | null
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as any,
     defaultValues: {
       title: "",
       description: "",
+      inputText: "",
       agentCategory: undefined,
       rewardSui: 1,
     },
   })
 
+  useEffect(() => {
+    if (preselectedCategory && Object.keys(AGENT_CATEGORY_LABELS).includes(preselectedCategory)) {
+      form.setValue("agentCategory", preselectedCategory)
+    }
+  }, [preselectedCategory, form])
+
   const onSubmit = async (values: FormValues) => {
     setError(null)
     setLoading(true)
     try {
+      const mergedDescription = values.inputText
+        ? `[Task Input]\n${values.inputText}\n\n[Instructions]\n${values.description}`
+        : values.description
+
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, creatorAddress: address }),
+        body: JSON.stringify({ ...values, description: mergedDescription, creatorAddress: address }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -209,6 +230,31 @@ export default function CreateTaskClient() {
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="inputText"
+                  render={({ field }) => {
+                    const cat = form.watch("agentCategory")
+                    const cfg = cat ? CATEGORY_INPUT_LABELS[cat] : null
+                    return (
+                      <FormItem>
+                        <FormLabel style={formLabelStyle}>
+                          {cfg?.label ?? "Task input"}
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder={cfg?.placeholder ?? "Paste the content for the agent to process..."}
+                            rows={4}
+                            {...field}
+                            style={inputStyle}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )
+                  }}
                 />
 
                 <FormField
