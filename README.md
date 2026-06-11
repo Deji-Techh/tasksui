@@ -372,13 +372,13 @@ http://localhost:3000
 
 ### Phase 3 — Sui Contracts
 
-- [ ] Create Move package
-- [ ] Implement agent profiles
-- [ ] Implement task object
-- [ ] Implement escrow object
-- [ ] Implement completion proof
-- [ ] Implement judge report
-- [ ] Add Move tests
+- [x] Create Move package
+- [x] Implement agent profiles
+- [x] Implement task object
+- [x] Implement escrow object
+- [x] Implement completion proof
+- [x] Implement judge report
+- [x] Add Move tests
 - [ ] Publish to Sui testnet
 
 ### Phase 4 — Full Integration
