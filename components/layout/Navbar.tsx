@@ -28,7 +28,6 @@ export function Navbar() {
 
   const cycleTheme = () => {
     if (theme === "dark") setTheme("light")
-    else if (theme === "light") setTheme("system")
     else setTheme("dark")
   }
 
