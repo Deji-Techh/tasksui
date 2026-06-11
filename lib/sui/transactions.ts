@@ -5,7 +5,7 @@ const MODULE = "marketplace"
 const MARKETPLACE_ID =
   process.env["NEXT_PUBLIC_TASKSUI_MARKETPLACE_ID"] ?? "0x0"
 
-function toBytes(hex: string): Uint8Array {
+export function toBytes(hex: string): Uint8Array {
   const h = hex.startsWith("0x") ? hex.slice(2) : hex
   const bytes = new Uint8Array(h.length / 2)
   for (let i = 0; i < bytes.length; i++) {
@@ -58,8 +58,7 @@ export function assignAgentTx(taskId: string, agentProfileId: string) {
 export function submitCompletionTx(
   taskId: string,
   agentProfileId: string,
-  resultHash: Uint8Array,
-  summary: string,
+  proofHash: Uint8Array,
 ) {
   const tx = new Transaction()
   tx.moveCall({
@@ -67,30 +66,27 @@ export function submitCompletionTx(
     arguments: [
       tx.object(taskId),
       tx.object(agentProfileId),
-      tx.pure(resultHash),
-      tx.pure.string(summary),
+      tx.pure(proofHash),
     ],
   })
   return tx
 }
 
 /**
- * Submit judge report on-chain.
+ * Submit judge report on-chain. verdict and recommendation are u8 values.
  */
 export function submitJudgeReportTx(
   taskId: string,
-  verdict: string,
-  score: number,
-  reportHash: Uint8Array,
+  verdict: number,
+  recommendation: number,
 ) {
   const tx = new Transaction()
   tx.moveCall({
     target: `${PACKAGE_ID}::${MODULE}::submit_judge_report`,
     arguments: [
       tx.object(taskId),
-      tx.pure.string(verdict),
-      tx.pure.u64(BigInt(score)),
-      tx.pure(reportHash),
+      tx.pure.u8(verdict),
+      tx.pure.u8(recommendation),
     ],
   })
   return tx

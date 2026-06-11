@@ -118,6 +118,15 @@ export async function PATCH(
       return NextResponse.json(updated)
     }
 
+    case "confirm_submission":
+    case "confirm_judge": {
+      const updated = await prisma.task.findUnique({
+        where: { id },
+        include: { agent: true },
+      })
+      return NextResponse.json(updated)
+    }
+
     case "confirm_chain": {
       const { escrowId, suiTaskId } = body
       const updated = await prisma.task.update({

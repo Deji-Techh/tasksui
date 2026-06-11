@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Check, X, Gavel, Wallet, Ban } from "lucide-react"
 import { useSuiTransaction } from "@/components/sui/useSuiTransaction"
-import { TaskStatus, AgentCategory } from "@/lib/constants"
+import { TaskStatus } from "@/lib/constants"
 
 type Props = {
   taskId: string
@@ -21,6 +21,32 @@ const CATEGORY_MAP: Record<string, number> = {
   MOVE_AUDIT: 0,
   RESEARCH_SUMMARY: 1,
   WALLET_ANALYSIS: 2,
+}
+
+const VERDICT_MAP: Record<string, number> = {
+  PASS: 0,
+  NEEDS_REVISION: 1,
+  FAIL: 2,
+}
+
+const RECOMMENDATION_MAP: Record<string, number> = {
+  APPROVE: 0,
+  DISPUTE: 1,
+}
+
+function extractDigest(result: unknown): string {
+  return (result as Record<string, unknown>).digest as string
+    ?? ((result as Record<string, unknown>).Transaction as Record<string, unknown>)?.digest as string
+    ?? ""
+}
+
+function extractTaskObjectId(result: unknown): string | null {
+  const changes = (result as Record<string, unknown>).objectChanges as Array<Record<string, unknown>> | undefined
+  if (!changes) return null
+  const created = changes.find(
+    (c) => c.type === "created" && String(c.objectType ?? "").includes("::marketplace::Task"),
+  )
+  return (created?.objectId as string) ?? null
 }
 
 export function TaskActions({
@@ -64,18 +90,39 @@ export function TaskActions({
     const tx = createTaskTx(description, CATEGORY_MAP[agentCategory] ?? 2, rewardMist)
     const result = await signAndExecute(tx)
     if (!result) throw new Error("Transaction was not signed")
-    const txDigest = (result as Record<string, unknown>).digest as string
-      ?? ((result as Record<string, unknown>).Transaction as Record<string, unknown>)?.digest as string
-      ?? ""
-    await callApi("confirm_chain", { txDigest })
+    await callApi("confirm_chain", {
+      txDigest: extractDigest(result),
+      suiTaskId: extractTaskObjectId(result),
+    })
   })
 
   const handleRunAgent = () => runAction("run_agent", async () => {
-    await callApi("run_agent")
+    const task = await callApi("run_agent")
+    const onChainAgentId = task.agent?.suiObjectId
+    if (suiTaskId && onChainAgentId && task.proofHash) {
+      const { submitCompletionTx, toBytes } = await import("@/lib/sui/transactions")
+      const result = await signAndExecute(
+        submitCompletionTx(suiTaskId, onChainAgentId, toBytes(task.proofHash)),
+      )
+      if (result) {
+        await callApi("confirm_submission", { txDigest: extractDigest(result) })
+      }
+    }
   })
 
   const handleRunJudge = () => runAction("run_judge", async () => {
-    await callApi("run_judge")
+    const task = await callApi("run_judge")
+    if (suiTaskId) {
+      const { submitJudgeReportTx } = await import("@/lib/sui/transactions")
+      const verdictU8 = VERDICT_MAP[task.judgeVerdict] ?? 0
+      const recommendationU8 = RECOMMENDATION_MAP[task.judgeRecommendation] ?? 0
+      const result = await signAndExecute(
+        submitJudgeReportTx(suiTaskId, verdictU8, recommendationU8),
+      )
+      if (result) {
+        await callApi("confirm_judge", { txDigest: extractDigest(result) })
+      }
+    }
   })
 
   const handleApprove = () => runAction("approve", async () => {
@@ -84,10 +131,7 @@ export function TaskActions({
       approveAndReleaseTx(suiTaskId ?? taskId, agentId ?? ""),
     )
     if (!result) throw new Error("Transaction was not signed")
-    const txDigest = (result as Record<string, unknown>).digest as string
-      ?? ((result as Record<string, unknown>).Transaction as Record<string, unknown>)?.digest as string
-      ?? ""
-    await callApi("release", { txDigest })
+    await callApi("release", { txDigest: extractDigest(result) })
   })
 
   const handleReject = () => runAction("reject", async () => {
@@ -96,10 +140,7 @@ export function TaskActions({
       markDisputedTx(suiTaskId ?? taskId, agentId ?? ""),
     )
     if (!result) throw new Error("Transaction was not signed")
-    const txDigest = (result as Record<string, unknown>).digest as string
-      ?? ((result as Record<string, unknown>).Transaction as Record<string, unknown>)?.digest as string
-      ?? ""
-    await callApi("dispute", { txDigest })
+    await callApi("dispute", { txDigest: extractDigest(result) })
   })
 
   const handleCancel = () => runAction("cancel_tx", async () => {
@@ -108,10 +149,7 @@ export function TaskActions({
       cancelTaskTx(suiTaskId ?? taskId),
     )
     if (!result) throw new Error("Transaction was not signed")
-    const txDigest = (result as Record<string, unknown>).digest as string
-      ?? ((result as Record<string, unknown>).Transaction as Record<string, unknown>)?.digest as string
-      ?? ""
-    await callApi("cancel", { txDigest })
+    await callApi("cancel", { txDigest: extractDigest(result) })
   })
 
   const btn = (key: string) => actionLoading === key || isSigning
