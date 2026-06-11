@@ -93,6 +93,31 @@ export function submitJudgeReportTx(
 }
 
 /**
+ * Assign agent + submit completion in one PTB.
+ * Must be called together since submit_completion requires agent_id to be set.
+ */
+export function assignAndSubmitTx(
+  taskId: string,
+  agentProfileId: string,
+  proofHash: Uint8Array,
+) {
+  const tx = new Transaction()
+  tx.moveCall({
+    target: `${PACKAGE_ID}::${MODULE}::assign_agent`,
+    arguments: [tx.object(taskId), tx.object(agentProfileId)],
+  })
+  tx.moveCall({
+    target: `${PACKAGE_ID}::${MODULE}::submit_completion`,
+    arguments: [
+      tx.object(taskId),
+      tx.object(agentProfileId),
+      tx.pure(proofHash),
+    ],
+  })
+  return tx
+}
+
+/**
  * Approve work and release escrow to agent owner.
  */
 export function approveAndReleaseTx(taskId: string, agentProfileId: string) {

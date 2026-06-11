@@ -5,16 +5,23 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { ArrowRight, Check, ClipboardCheck, Eye, FileText, Loader2, Shield } from "lucide-react"
+import { Check, ClipboardCheck, Eye, FileText, Loader2, Shield, Wallet } from "lucide-react"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { AgentCategory, AGENT_CATEGORY_LABELS } from "@/lib/constants"
+import { useSuiTransaction } from "@/components/sui/useSuiTransaction"
 
 const AGENT_ICONS: Record<AgentCategory, React.ReactNode> = {
   MOVE_AUDIT: <Shield size={16} />,
   RESEARCH_SUMMARY: <FileText size={16} />,
   WALLET_ANALYSIS: <Eye size={16} />,
+}
+
+const CATEGORY_MAP: Record<string, number> = {
+  MOVE_AUDIT: 0,
+  RESEARCH_SUMMARY: 1,
+  WALLET_ANALYSIS: 2,
 }
 
 const formSchema = z.object({
@@ -28,10 +35,25 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
+function extractDigest(result: unknown): string {
+  return (result as Record<string, unknown>).digest as string
+    ?? ((result as Record<string, unknown>).Transaction as Record<string, unknown>)?.digest as string
+    ?? ""
+}
+
+function extractTaskObjectId(result: unknown): string | null {
+  const changes = (result as Record<string, unknown>).objectChanges as Array<Record<string, unknown>> | undefined
+  if (!changes) return null
+  const created = changes.find(
+    (c) => c.type === "created" && String(c.objectType ?? "").includes("::marketplace::Task"),
+  )
+  return (created?.objectId as string) ?? null
+}
+
 export default function CreateTaskPage() {
   const router = useRouter()
+  const { signAndExecute, isSigning, error: txError, isConnected } = useSuiTransaction()
   const [submitted, setSubmitted] = useState(false)
-  const [createdId, setCreatedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
 
@@ -59,14 +81,34 @@ export default function CreateTaskPage() {
         throw new Error(data.error ?? "Failed to create task")
       }
       const task = await res.json()
-      setCreatedId(task.id)
+
+      if (isConnected) {
+        const { createTaskTx } = await import("@/lib/sui/transactions")
+        const rewardMist = BigInt(Math.floor(values.rewardSui * 1_000_000_000))
+        const tx = createTaskTx(values.description, CATEGORY_MAP[values.agentCategory] ?? 2, rewardMist)
+        const result = await signAndExecute(tx)
+        if (result) {
+          await fetch(`/api/tasks/${task.id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "confirm_chain",
+              txDigest: extractDigest(result),
+              suiTaskId: extractTaskObjectId(result),
+            }),
+          })
+        }
+      }
+
       setSubmitted(true)
-      setTimeout(() => router.push(`/tasks/${task.id}`), 2000)
+      setTimeout(() => router.push(`/tasks/${task.id}`), 1500)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong")
       setLoading(false)
     }
   }
+
+  const isProcessing = loading || isSigning
 
   if (submitted) {
     return (
@@ -94,8 +136,8 @@ export default function CreateTaskPage() {
             </div>
             <h2>Task created</h2>
             <p>
-              Your task has been submitted. Fund escrow on Sui to activate it
-              and the AI agent will begin processing.
+              Your task has been created and funded on Sui. Redirecting to task
+              page where you can activate the AI agent.
             </p>
           </section>
         </main>
@@ -211,7 +253,7 @@ export default function CreateTaskPage() {
                   )}
                 />
 
-                {error && (
+                {(error || txError) && (
                   <div
                     style={{
                       padding: "12px 16px",
@@ -222,18 +264,29 @@ export default function CreateTaskPage() {
                       fontSize: "14px",
                     }}
                   >
-                    {error}
+                    {error ?? txError}
                   </div>
+                )}
+
+                {!isConnected && (
+                  <p style={{ color: "var(--fg-secondary)", fontSize: "13px", margin: 0 }}>
+                    Connect your Sui wallet to fund escrow automatically. Without a wallet, the
+                    task will be saved and you can fund it later.
+                  </p>
                 )}
 
                 <button
                   type="submit"
                   className="ts-button ts-button--primary"
-                  disabled={loading}
+                  disabled={isProcessing}
                   style={{ width: "100%", justifyContent: "center" }}
                 >
-                  {loading ? (
+                  {isProcessing ? (
                     <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
+                  ) : isConnected ? (
+                    <>
+                      <Wallet size={16} /> Create & Fund Escrow
+                    </>
                   ) : (
                     <>
                       Create Task <ClipboardCheck size={16} />

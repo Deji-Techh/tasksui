@@ -100,9 +100,9 @@ export function TaskActions({
     const task = await callApi("run_agent")
     const onChainAgentId = task.agent?.suiObjectId
     if (suiTaskId && onChainAgentId && task.proofHash) {
-      const { submitCompletionTx, toBytes } = await import("@/lib/sui/transactions")
+      const { assignAndSubmitTx, toBytes } = await import("@/lib/sui/transactions")
       const result = await signAndExecute(
-        submitCompletionTx(suiTaskId, onChainAgentId, toBytes(task.proofHash)),
+        assignAndSubmitTx(suiTaskId, onChainAgentId, toBytes(task.proofHash)),
       )
       if (result) {
         await callApi("confirm_submission", { txDigest: extractDigest(result) })
