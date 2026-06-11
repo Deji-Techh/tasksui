@@ -1,54 +1,99 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
-import { ShoppingBag, PlusCircle, LayoutDashboard } from "lucide-react"
-import { ThemeToggle } from "@/components/theme/ThemeToggle"
-import { Button } from "@/components/ui/button"
+import { Menu, Moon, Sun, X } from "lucide-react"
+import { useTheme } from "@/components/theme/ThemeProvider"
 
 export function Navbar() {
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    const handleScroll = () => setScrolled(window.scrollY > 18)
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false)
+    }
+    handleScroll()
+    window.addEventListener("scroll", handleScroll)
+    window.addEventListener("keydown", handleKey)
+    return () => {
+      window.removeEventListener("scroll", handleScroll)
+      window.removeEventListener("keydown", handleKey)
+    }
+  }, [])
+
+  const cycleTheme = () => {
+    if (theme === "dark") setTheme("light")
+    else setTheme("dark")
+  }
+
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/80 backdrop-blur-sm">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
-        <div className="flex items-center gap-8">
-          <Link href="/" className="flex items-center gap-2 font-semibold text-lg">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sui text-sui-foreground text-sm font-bold">
-              TS
-            </span>
-            TaskSui
+    <header className={`ts-site-nav ${scrolled ? "ts-site-nav--scrolled" : ""}`}>
+      <div className="ts-site-nav__inner">
+        <Link className="ts-site-nav__brand" href="/" aria-label="TaskSui home">
+          <img
+            src={mounted && theme === "light" ? "/logo-light.png" : "/logo-dark.png"}
+            alt="TaskSui"
+            className="ts-site-nav__logo"
+          />
+          <span>TaskSui</span>
+        </Link>
+
+        <nav className="ts-site-nav__links" aria-label="Primary navigation">
+          <Link className="ts-site-nav__link" href="/marketplace">Marketplace</Link>
+          <Link className="ts-site-nav__link" href="/create">Create Task</Link>
+          <Link className="ts-site-nav__link" href="/dashboard">Dashboard</Link>
+        </nav>
+
+        <div className="ts-site-nav__actions">
+          {mounted && (
+            <div className="ts-theme-switch" aria-label="Theme selection">
+              <button
+                className={theme === "dark" ? "is-active" : ""}
+                onClick={() => setTheme("dark")}
+                aria-label="Dark theme"
+              >
+                <Moon size={14} />
+              </button>
+              <button
+                className={theme === "light" ? "is-active" : ""}
+                onClick={() => setTheme("light")}
+                aria-label="Light theme"
+              >
+                <Sun size={14} />
+              </button>
+            </div>
+          )}
+          <Link href="/create" className="ts-site-nav__cta">
+            Create Task
           </Link>
-
-          <nav className="hidden md:flex items-center gap-6">
-            <Link
-              href="/marketplace"
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <ShoppingBag className="h-4 w-4" />
-              Marketplace
-            </Link>
-            <Link
-              href="/create"
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <PlusCircle className="h-4 w-4" />
-              Create Task
-            </Link>
-            <Link
-              href="/dashboard"
-              className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <LayoutDashboard className="h-4 w-4" />
-              Dashboard
-            </Link>
-          </nav>
+          <button
+            className="ts-site-nav__mobile"
+            onClick={() => setMobileOpen((open) => !open)}
+            aria-label={mobileOpen ? "Close menu" : "Open menu"}
+            aria-expanded={mobileOpen}
+          >
+            {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
         </div>
 
-        <div className="flex items-center gap-3">
-          <Button variant="outline" size="sm" className="gap-2">
-            <span className="hidden sm:inline">Connect Wallet</span>
-            <span className="sm:hidden">Connect</span>
-          </Button>
-          <ThemeToggle />
-        </div>
+        {mobileOpen && (
+          <div className="ts-mobile-panel">
+            <Link href="/marketplace" onClick={() => setMobileOpen(false)}>Marketplace</Link>
+            <Link href="/create" onClick={() => setMobileOpen(false)}>Create Task</Link>
+            <Link href="/dashboard" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+            <div className="ts-mobile-panel__links">
+              <a href="https://sui.io" target="_blank" rel="noopener noreferrer">Sui Network</a>
+              <span onClick={cycleTheme} style={{ cursor: "pointer" }}>
+                Theme: {mounted ? theme : "..."}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   )
