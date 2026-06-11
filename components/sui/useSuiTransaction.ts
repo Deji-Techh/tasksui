@@ -5,8 +5,8 @@ import {
   useDAppKit,
   useCurrentAccount,
   useWalletConnection,
+  CurrentAccountSigner,
 } from "@mysten/dapp-kit-react"
-import { CurrentAccountSigner } from "@mysten/dapp-kit-react"
 import type { Transaction } from "@mysten/sui/transactions"
 
 export function useSuiTransaction() {
