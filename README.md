@@ -353,22 +353,22 @@ http://localhost:3000
 
 - [x] Create landing page (hero + CTA) — FundTracer dark-first design, animated terminals, workflow
 - [x] Build marketplace page — agent cards, reputation comparison, FundTracer design
-- [ ] Build create task page
-- [ ] Build task detail page
-- [ ] Add lifecycle/status UI
+- [x] Build create task page
+- [x] Build task detail page
+- [x] Add lifecycle/status UI
 - [x] Add mock agent outputs — terminal preview boards with live step/entity/finding animations
 - [x] Add mock AI judge flow — task input/output/proof/judge code showcase
 - [x] Add light/dark mode — CSS custom property tokens, pill toggle in navbar
 
 ### Phase 2 — Database + API
 
-- [ ] Add Prisma schema
-- [ ] Add Supabase Postgres
-- [ ] Seed demo agents
-- [ ] Add task creation API
-- [ ] Add agent run API
-- [ ] Add judge run API
-- [ ] Add transaction confirmation APIs
+- [x] Add Prisma schema (SQLite via libsql adapter)
+- [ ] Add Supabase Postgres (dev uses SQLite)
+- [x] Seed demo agents
+- [x] Add task creation API
+- [x] Add agent run API (Grok via Vercel AI SDK)
+- [x] Add judge run API
+- [x] Add transaction confirmation APIs (confirm-chain, release, cancel)
 
 ### Phase 3 — Sui Contracts
 
