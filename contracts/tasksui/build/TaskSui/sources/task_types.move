@@ -46,6 +46,8 @@ module tasksui::task_types {
     const E_NOT_READY_FOR_RELEASE: u64 = 10;
     const E_CANNOT_CANCEL: u64 = 11;
     const E_WRONG_AGENT_CATEGORY: u64 = 12;
+    const E_INVALID_PROOF: u64 = 13;
+    const E_INVALID_JUDGE_REPORT: u64 = 14;
 
     // ============================================================
     // Status accessor functions
@@ -68,6 +70,8 @@ module tasksui::task_types {
     public fun e_not_ready_for_release(): u64 { E_NOT_READY_FOR_RELEASE }
     public fun e_cannot_cancel(): u64 { E_CANNOT_CANCEL }
     public fun e_wrong_agent_category(): u64 { E_WRONG_AGENT_CATEGORY }
+    public fun e_invalid_proof(): u64 { E_INVALID_PROOF }
+    public fun e_invalid_judge_report(): u64 { E_INVALID_JUDGE_REPORT }
 
     // ============================================================
     // Pure helpers
