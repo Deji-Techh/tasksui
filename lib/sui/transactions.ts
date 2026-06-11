@@ -2,26 +2,59 @@ import { Transaction } from "@mysten/sui/transactions"
 
 const PACKAGE_ID = process.env["NEXT_PUBLIC_TASKSUI_PACKAGE_ID"] ?? "0x0"
 const MODULE = "marketplace"
+const MARKETPLACE_ID =
+  process.env["NEXT_PUBLIC_TASKSUI_MARKETPLACE_ID"] ?? "0x0"
 
+function toBytes(hex: string): Uint8Array {
+  const h = hex.startsWith("0x") ? hex.slice(2) : hex
+  const bytes = new Uint8Array(h.length / 2)
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(h.slice(i * 2, i * 2 + 2), 16)
+  }
+  return bytes
+}
+
+/**
+ * Create task + fund escrow. Splits payment from gas coin.
+ */
 export function createTaskTx(
-  agentProfileId: string,
-  descriptionHash: Uint8Array,
+  description: string,
   category: number,
-  coinObjectId: string,
+  rewardMist: bigint,
 ) {
+  const descriptionHash = new Uint8Array(
+    new TextEncoder().encode(description).slice(0, 32),
+  )
   const tx = new Transaction()
+  const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(rewardMist)])
   tx.moveCall({
-    target: `${PACKAGE_ID}::${MODULE}::create_task_with_escrow`,
+    target: `${PACKAGE_ID}::${MODULE}::create_task`,
     arguments: [
-      tx.object(agentProfileId),
+      tx.object(MARKETPLACE_ID),
       tx.pure(descriptionHash),
       tx.pure.u8(category),
-      tx.object(coinObjectId),
+      tx.pure.u64(rewardMist),
+      coin,
     ],
   })
   return tx
 }
 
+/**
+ * Assign agent after funding.
+ */
+export function assignAgentTx(taskId: string, agentProfileId: string) {
+  const tx = new Transaction()
+  tx.moveCall({
+    target: `${PACKAGE_ID}::${MODULE}::assign_agent`,
+    arguments: [tx.object(taskId), tx.object(agentProfileId)],
+  })
+  return tx
+}
+
+/**
+ * Submit completion proof on-chain.
+ */
 export function submitCompletionTx(
   taskId: string,
   agentProfileId: string,
@@ -41,6 +74,9 @@ export function submitCompletionTx(
   return tx
 }
 
+/**
+ * Submit judge report on-chain.
+ */
 export function submitJudgeReportTx(
   taskId: string,
   verdict: string,
@@ -60,6 +96,9 @@ export function submitJudgeReportTx(
   return tx
 }
 
+/**
+ * Approve work and release escrow to agent owner.
+ */
 export function approveAndReleaseTx(taskId: string, agentProfileId: string) {
   const tx = new Transaction()
   tx.moveCall({
@@ -69,15 +108,21 @@ export function approveAndReleaseTx(taskId: string, agentProfileId: string) {
   return tx
 }
 
+/**
+ * Cancel task and refund escrow to creator.
+ */
 export function cancelTaskTx(taskId: string) {
   const tx = new Transaction()
   tx.moveCall({
-    target: `${PACKAGE_ID}::${MODULE}::cancel_before_submission`,
+    target: `${PACKAGE_ID}::${MODULE}::cancel_task`,
     arguments: [tx.object(taskId)],
   })
   return tx
 }
 
+/**
+ * Mark task as disputed and refund.
+ */
 export function markDisputedTx(taskId: string, agentProfileId: string) {
   const tx = new Transaction()
   tx.moveCall({

@@ -239,6 +239,9 @@ export default async function TaskDetailPage({
                 suiTaskId={task.suiTaskId}
                 escrowId={task.escrowId}
                 agentId={task.agent?.suiObjectId ?? null}
+                description={task.description}
+                agentCategory={task.agentCategory}
+                rewardSui={task.rewardSui}
               />
 
               {task.agent && (

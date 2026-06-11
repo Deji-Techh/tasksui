@@ -139,11 +139,51 @@ export async function PATCH(
           { status: 400 }
         )
       }
+      const agentUpdate =
+        task.agentId
+          ? prisma.agent.update({
+              where: { id: task.agentId },
+              data: {
+                completedTasks: { increment: 1 },
+                totalEarnedMist: String(
+                  BigInt(
+                    Math.floor(task.rewardSui * 1_000_000_000)
+                  ),
+                ),
+              },
+            })
+          : Promise.resolve(null)
+
       const updated = await prisma.task.update({
         where: { id },
         data: { status: "RELEASED" },
         include: { agent: true },
       })
+      await agentUpdate
+      return NextResponse.json(updated)
+    }
+
+    case "dispute": {
+      if (task.status !== "JUDGE_REVIEWED" && task.status !== "SUBMITTED") {
+        return NextResponse.json(
+          { error: "Task not eligible for dispute" },
+          { status: 400 }
+        )
+      }
+      const agentUpdate =
+        task.agentId
+          ? prisma.agent.update({
+              where: { id: task.agentId },
+              data: { disputedTasks: { increment: 1 } },
+            })
+          : Promise.resolve(null)
+
+      const updated = await prisma.task.update({
+        where: { id },
+        data: { status: "DISPUTED" },
+        include: { agent: true },
+      })
+      await agentUpdate
       return NextResponse.json(updated)
     }
 
