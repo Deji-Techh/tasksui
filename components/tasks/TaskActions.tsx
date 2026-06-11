@@ -98,32 +98,39 @@ export function TaskActions({
   })
 
   const handleRunAgent = () => runAction("run_agent", async () => {
+    if (!suiTaskId) {
+      throw new Error("Missing on-chain task ID — task must be funded first")
+    }
     const task = await callApi("run_agent")
     const onChainAgentId = task.agent?.suiObjectId
-    if (suiTaskId && onChainAgentId && task.proofHash) {
-      const { assignAndSubmitTx, toBytes } = await import("@/lib/sui/transactions")
-      const result = await signAndExecute(
-        assignAndSubmitTx(suiTaskId, onChainAgentId, toBytes(task.proofHash)),
-      )
-      if (result) {
-        await callApi("confirm_submission", { txDigest: extractDigest(result) })
-      }
+    if (!onChainAgentId) {
+      throw new Error("No on-chain agent available for this category")
     }
+    const { assignAndSubmitTx, toBytes } = await import("@/lib/sui/transactions")
+    const result = await signAndExecute(
+      assignAndSubmitTx(suiTaskId, onChainAgentId, toBytes(task.proofHash)),
+    )
+    if (!result) {
+      throw new Error("Transaction was not signed or failed")
+    }
+    await callApi("confirm_submission", { txDigest: extractDigest(result) })
   })
 
   const handleRunJudge = () => runAction("run_judge", async () => {
-    const task = await callApi("run_judge")
-    if (suiTaskId) {
-      const { submitJudgeReportTx } = await import("@/lib/sui/transactions")
-      const verdictU8 = VERDICT_MAP[task.judgeVerdict] ?? 0
-      const recommendationU8 = RECOMMENDATION_MAP[task.judgeRecommendation] ?? 0
-      const result = await signAndExecute(
-        submitJudgeReportTx(suiTaskId, verdictU8, recommendationU8),
-      )
-      if (result) {
-        await callApi("confirm_judge", { txDigest: extractDigest(result) })
-      }
+    if (!suiTaskId) {
+      throw new Error("Missing on-chain task ID — task must be funded first")
     }
+    const task = await callApi("run_judge")
+    const { submitJudgeReportTx } = await import("@/lib/sui/transactions")
+    const verdictU8 = VERDICT_MAP[task.judgeVerdict] ?? 0
+    const recommendationU8 = RECOMMENDATION_MAP[task.judgeRecommendation] ?? 0
+    const result = await signAndExecute(
+      submitJudgeReportTx(suiTaskId, verdictU8, recommendationU8),
+    )
+    if (!result) {
+      throw new Error("Transaction was not signed or failed")
+    }
+    await callApi("confirm_judge", { txDigest: extractDigest(result) })
   })
 
   const handleApprove = () => runAction("approve", async () => {

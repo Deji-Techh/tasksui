@@ -22,6 +22,12 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     )
   }
+  if (!creatorAddress) {
+    return NextResponse.json(
+      { error: "Wallet connection required to create a task" },
+      { status: 400 }
+    )
+  }
 
   const rewardMist = String(BigInt(Math.floor(rewardSui * 1_000_000_000)))
 

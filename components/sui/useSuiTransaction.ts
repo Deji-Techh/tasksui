@@ -5,7 +5,6 @@ import {
   useDAppKit,
   useCurrentAccount,
   useWalletConnection,
-  CurrentAccountSigner,
 } from "@mysten/dapp-kit-react"
 import type { Transaction } from "@mysten/sui/transactions"
 
@@ -27,8 +26,14 @@ export function useSuiTransaction() {
       setError(null)
 
       try {
-        const signer = new CurrentAccountSigner(dAppKit)
-        const result = await signer.signAndExecuteTransaction({ transaction: tx })
+        const result = await dAppKit.signAndExecuteTransaction({
+          transaction: tx,
+          options: {
+            showObjectChanges: true,
+            showEffects: true,
+            showEvents: true,
+          },
+        } as any)
         return result
       } catch (err) {
         const message =

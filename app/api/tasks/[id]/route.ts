@@ -188,6 +188,9 @@ export async function PATCH(
     // ── confirm_chain: verify on-chain tx, then set FUNDED ──
     case "confirm_chain": {
       const { txDigest, suiTaskId } = body
+      if (!suiTaskId) {
+        return NextResponse.json({ error: "Missing Sui task object ID" }, { status: 400 })
+      }
       const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined)
       if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 

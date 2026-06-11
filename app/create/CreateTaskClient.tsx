@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { Check, ClipboardCheck, Eye, FileText, Loader2, Shield, Wallet } from "lucide-react"
+import { Check, Eye, FileText, Loader2, Shield, Wallet } from "lucide-react"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -82,29 +82,27 @@ export default function CreateTaskClient() {
       }
       const task = await res.json()
 
-      if (isConnected) {
-        const { createTaskTx, hashDescription } = await import("@/lib/sui/transactions")
-        const rewardMist = BigInt(Math.floor(values.rewardSui * 1_000_000_000))
-        const descHash = await hashDescription(values.description)
-        const tx = createTaskTx(descHash, CATEGORY_MAP[values.agentCategory] ?? 2, rewardMist)
-        const result = await signAndExecute(tx)
-        if (!result) {
-          throw new Error("Sui transaction was not signed or failed")
-        }
-        const confirmRes = await fetch(`/api/tasks/${task.id}`, {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "confirm_chain",
-            creatorAddress: address,
-            txDigest: extractDigest(result),
-            suiTaskId: extractTaskObjectId(result),
-          }),
-        })
-        if (!confirmRes.ok) {
-          const data = await confirmRes.json()
-          throw new Error(data.error ?? "Chain confirmation failed")
-        }
+      const { createTaskTx, hashDescription } = await import("@/lib/sui/transactions")
+      const rewardMist = BigInt(Math.floor(values.rewardSui * 1_000_000_000))
+      const descHash = await hashDescription(values.description)
+      const tx = createTaskTx(descHash, CATEGORY_MAP[values.agentCategory] ?? 2, rewardMist)
+      const result = await signAndExecute(tx)
+      if (!result) {
+        throw new Error("Sui transaction was not signed or failed")
+      }
+      const confirmRes = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "confirm_chain",
+          creatorAddress: address,
+          txDigest: extractDigest(result),
+          suiTaskId: extractTaskObjectId(result),
+        }),
+      })
+      if (!confirmRes.ok) {
+        const data = await confirmRes.json()
+        throw new Error(data.error ?? "Chain confirmation failed")
       }
 
       setSubmitted(true)
@@ -276,27 +274,22 @@ export default function CreateTaskClient() {
                 )}
 
                 {!isConnected && (
-                  <p style={{ color: "var(--fg-secondary)", fontSize: "13px", margin: 0 }}>
-                    Connect your Sui wallet to fund escrow automatically. Without a wallet, the
-                    task will be saved and you can fund it later.
+                  <p style={{ color: "var(--status-red)", fontSize: "13px", margin: 0 }}>
+                    Connect your Sui wallet to create a task.
                   </p>
                 )}
 
                 <button
                   type="submit"
                   className="ts-button ts-button--primary"
-                  disabled={isProcessing}
+                  disabled={isProcessing || !isConnected}
                   style={{ width: "100%", justifyContent: "center" }}
                 >
                   {isProcessing ? (
                     <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
-                  ) : isConnected ? (
-                    <>
-                      <Wallet size={16} /> Create & Fund Escrow
-                    </>
                   ) : (
                     <>
-                      Create Task <ClipboardCheck size={16} />
+                      <Wallet size={16} /> Create & Fund Escrow
                     </>
                   )}
                 </button>
