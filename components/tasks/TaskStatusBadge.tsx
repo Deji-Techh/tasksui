@@ -39,7 +39,8 @@ function parseStyle(s: string): Record<string, string> {
   s.split(";").forEach((part) => {
     const colon = part.indexOf(":")
     if (colon < 0) return
-    const key = part.slice(0, colon).trim()
+    const raw = part.slice(0, colon).trim()
+    const key = raw.startsWith("--") ? raw : raw.replace(/-([a-z])/g, (_, c: string) => c.toUpperCase())
     const val = part.slice(colon + 1).trim()
     if (key && val) out[key] = val
   })
