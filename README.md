@@ -351,14 +351,14 @@ http://localhost:3000
 
 ### Phase 1 — Frontend Mock MVP
 
-- [x] Create landing page (hero + CTA)
+- [x] Create landing page (hero + CTA) — FundTracer dark-first design, animated terminals, workflow
 - [ ] Build marketplace page
 - [ ] Build create task page
 - [ ] Build task detail page
 - [ ] Add lifecycle/status UI
-- [ ] Add mock agent outputs
-- [ ] Add mock AI judge flow
-- [x] Add light/dark mode
+- [x] Add mock agent outputs — terminal preview boards with live step/entity/finding animations
+- [x] Add mock AI judge flow — task input/output/proof/judge code showcase
+- [x] Add light/dark mode — CSS custom property tokens, pill toggle in navbar
 
 ### Phase 2 — Database + API
 
