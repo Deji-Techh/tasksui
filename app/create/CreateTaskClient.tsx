@@ -64,8 +64,11 @@ export default function CreateTaskClient() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [agents, setAgents] = useState<any[]>([])
+  const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
   const preselectedCategory = searchParams.get("category") as AgentCategory | null
+  const preselectedAgentId = searchParams.get("agentId")
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as any,
@@ -84,6 +87,25 @@ export default function CreateTaskClient() {
     }
   }, [preselectedCategory, form])
 
+  useEffect(() => {
+    fetch("/api/agents")
+      .then((r) => r.json())
+      .then(setAgents)
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    if (preselectedAgentId && agents.length > 0) {
+      setSelectedAgentId(preselectedAgentId)
+      const agent = agents.find((a) => a.id === preselectedAgentId)
+      if (agent) {
+        form.setValue("agentCategory", agent.category as AgentCategory)
+      }
+    }
+  }, [preselectedAgentId, agents, form])
+
+  const categoryAgents = agents.filter((a) => a.category === form.watch("agentCategory"))
+
   const onSubmit = async (values: FormValues) => {
     setError(null)
     setLoading(true)
@@ -95,7 +117,7 @@ export default function CreateTaskClient() {
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...values, description: mergedDescription, creatorAddress: address }),
+        body: JSON.stringify({ ...values, description: mergedDescription, creatorAddress: address, agentId: selectedAgentId }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -271,7 +293,10 @@ export default function CreateTaskClient() {
                                 key={cat}
                                 type="button"
                                 className={`ts-segmented-control__option ${field.value === cat ? "is-active" : ""}`}
-                                onClick={() => field.onChange(cat)}
+                                onClick={() => {
+                                  field.onChange(cat)
+                                  setSelectedAgentId(null)
+                                }}
                               >
                                 {AGENT_ICONS[cat]}
                                 {AGENT_CATEGORY_LABELS[cat]}
@@ -284,6 +309,50 @@ export default function CreateTaskClient() {
                     </FormItem>
                   )}
                 />
+
+                {categoryAgents.length > 0 && (
+                  <div>
+                    <label style={formLabelStyle}>Choose an agent</label>
+                    <div style={{ display: "grid", gap: 8 }}>
+                      {categoryAgents.map((agent: any) => (
+                        <button
+                          key={agent.id}
+                          type="button"
+                          onClick={() => setSelectedAgentId(agent.id)}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 12,
+                            padding: "12px 16px",
+                            border: selectedAgentId === agent.id
+                              ? "2px solid var(--accent)"
+                              : "1px solid var(--card-border)",
+                            borderRadius: "var(--radius-md)",
+                            background: selectedAgentId === agent.id
+                              ? "var(--accent-bg)"
+                              : "var(--card)",
+                            color: "var(--fg)",
+                            cursor: "pointer",
+                            textAlign: "left",
+                            width: "100%",
+                          }}
+                        >
+                          <div>
+                            <strong style={{ fontSize: 14, fontWeight: 500 }}>{agent.name}</strong>
+                            <span style={{
+                              display: "block",
+                              color: "var(--fg-tertiary)",
+                              fontSize: 12,
+                              marginTop: 2,
+                            }}>
+                              Rep: {agent.reputationScore} | {agent.completedTasks} completed
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <FormField
                   control={form.control}

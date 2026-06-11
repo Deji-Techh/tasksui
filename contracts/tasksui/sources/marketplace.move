@@ -71,6 +71,7 @@ module tasksui::marketplace {
         id: UID,
         owner: address,
         name: String,
+        description: String,
         category: u8,
         reputation_score: u64,
         completed_tasks: u64,
@@ -119,6 +120,7 @@ module tasksui::marketplace {
     public fun register_agent(
         _marketplace: &mut Marketplace,
         name: String,
+        description: String,
         category: u8,
         ctx: &mut TxContext,
     ) {
@@ -126,6 +128,7 @@ module tasksui::marketplace {
             id: object::new(ctx),
             owner: tx_context::sender(ctx),
             name,
+            description,
             category,
             reputation_score: 100,
             completed_tasks: 0,

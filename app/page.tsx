@@ -130,7 +130,7 @@ const SUI_FEATURES = [
 ]
 
 export default function LandingPage() {
-  const [stats, setStats] = useState({ taskCount: 0, agentCount: 3, completedCount: 0 })
+  const [stats, setStats] = useState({ taskCount: 0, agentCount: 3, completedCount: 0, recentVerified: [] as any[] })
 
   useEffect(() => {
     fetch("/api/stats")
@@ -146,6 +146,7 @@ export default function LandingPage() {
         <WorkflowSection />
         <AgentsSection stats={stats} />
         <SuiFeaturesSection />
+        <RecentVerifiedSection tasks={stats.recentVerified} />
         <ClosingSection />
       </main>
 
@@ -503,6 +504,55 @@ function SuiFeaturesSection() {
           <div className="ts-feature-cell" key={feature}>
             <span>{feature}</span>
           </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+function RecentVerifiedSection({ tasks }: { tasks: any[] }) {
+  if (!tasks || tasks.length === 0) return null
+
+  return (
+    <section className="ts-section ts-section--bordered">
+      <div className="ts-section__intro">
+        <span className="ts-kicker">Recently Verified</span>
+        <h2>Completed tasks on Sui.</h2>
+        <p>Real tasks delivered by AI agents with escrow released on-chain.</p>
+      </div>
+
+      <div style={{ display: "grid", gap: 8, maxWidth: 720, margin: "0 auto" }}>
+        {tasks.map((task: any) => (
+          <Link
+            key={task.id}
+            href={`/tasks/${task.id}`}
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              padding: "14px 20px",
+              border: "1px solid var(--card-border)",
+              borderRadius: "var(--radius-lg)",
+              background: "var(--card)",
+              color: "inherit",
+              textDecoration: "none",
+            }}
+          >
+            <div>
+              <strong style={{ fontSize: 14, fontWeight: 500 }}>{task.title}</strong>
+              <span style={{ display: "block", color: "var(--fg-tertiary)", fontSize: 12, marginTop: 2 }}>
+                {task.agent?.name ?? "AI Agent"}
+              </span>
+            </div>
+            <span style={{
+              color: "var(--accent)",
+              fontSize: 13,
+              fontFamily: "var(--font-mono)",
+              fontWeight: 500,
+            }}>
+              {Number(task.rewardMist) / 1_000_000_000} SUI
+            </span>
+          </Link>
         ))}
       </div>
     </section>

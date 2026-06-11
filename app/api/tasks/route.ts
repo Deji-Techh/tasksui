@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import crypto from "crypto"
 import { prisma } from "@/lib/db"
 
 export async function GET(request: NextRequest) {
@@ -22,7 +23,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, description, agentCategory, rewardSui, creatorAddress } = body
+    const { title, description, agentCategory, rewardSui, creatorAddress, agentId, inputText } = body
 
     if (!title || !description || !agentCategory || rewardSui == null) {
       return NextResponse.json(
@@ -39,14 +40,21 @@ export async function POST(request: NextRequest) {
 
     const rewardMist = String(BigInt(Math.floor(rewardSui * 1_000_000_000)))
 
+    const inputHash = inputText
+      ? crypto.createHash("sha256").update(inputText).digest("hex")
+      : null
+
     const task = await prisma.task.create({
       data: {
         title,
         description,
         agentCategory,
         rewardMist,
-        creatorAddress: creatorAddress ?? null,
+        creatorAddress,
         status: "PENDING_CHAIN",
+        agentId: agentId ?? null,
+        inputText: inputText ?? null,
+        inputHash,
       },
     })
 

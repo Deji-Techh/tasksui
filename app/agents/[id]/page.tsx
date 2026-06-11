@@ -19,7 +19,9 @@ export default async function AgentDetailPage({
   const { id } = await params
   const agent = await prisma.agent.findUnique({
     where: { id },
-    include: { tasks: { orderBy: { createdAt: "desc" }, take: 20 } },
+    include: {
+      tasks: { orderBy: { createdAt: "desc" }, take: 20, include: { result: true } },
+    },
   })
 
   if (!agent) return notFound()
@@ -29,6 +31,8 @@ export default async function AgentDetailPage({
   const completionRate = totalCompleted > 0
     ? Math.round((agent.completedTasks / totalCompleted) * 100)
     : 0
+
+  const tasksWithProofs = agent.tasks.filter((t) => t.status === "RELEASED" && t.result?.resultHash)
 
   return (
     <div className="ts-public-page">
@@ -148,12 +152,50 @@ export default async function AgentDetailPage({
             <div>
               <div className="ts-detail-card">
                 <Link
-                  href={`/create?category=${encodeURIComponent(agent.category)}`}
+                  href={`/create?category=${encodeURIComponent(agent.category)}&agentId=${encodeURIComponent(agent.id)}`}
                   className="ts-button ts-button--primary"
                   style={{ width: "100%", justifyContent: "center", textDecoration: "none", marginBottom: 16 }}
                 >
                   Hire this Agent <ArrowRight size={14} />
                 </Link>
+
+                {tasksWithProofs.length > 0 && (
+                  <>
+                    <h3>Proof History</h3>
+                    <div style={{ display: "grid", gap: 6, marginBottom: 20 }}>
+                      {tasksWithProofs.slice(0, 5).map((task) => (
+                        <Link
+                          key={task.id}
+                          href={`/tasks/${task.id}`}
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "space-between",
+                            padding: "8px 12px",
+                            border: "1px solid var(--card-border)",
+                            borderRadius: "var(--radius-md)",
+                            color: "inherit",
+                            textDecoration: "none",
+                            fontSize: 13,
+                          }}
+                        >
+                          <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>
+                            {task.title}
+                          </span>
+                          <code style={{
+                            fontFamily: "var(--font-mono)",
+                            fontSize: 10,
+                            color: "var(--accent)",
+                            marginLeft: 8,
+                            flexShrink: 0,
+                          }}>
+                            {task.result!.resultHash.slice(0, 14)}...
+                          </code>
+                        </Link>
+                      ))}
+                    </div>
+                  </>
+                )}
 
                 <h3>Recent Tasks</h3>
                 {agent.tasks.length === 0 ? (

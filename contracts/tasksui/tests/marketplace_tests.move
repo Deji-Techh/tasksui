@@ -36,6 +36,7 @@ module tasksui::marketplace_tests {
             marketplace::register_agent(
                 &mut marketplace,
                 b"Move Auditor".to_string(),
+                b"Reviews Sui Move code for vulnerabilities".to_string(),
                 task_types::status_funded(),
                 ctx(&mut scenario),
             );
@@ -74,6 +75,7 @@ module tasksui::marketplace_tests {
             marketplace::register_agent(
                 &mut marketplace,
                 b"Move Auditor".to_string(),
+                b"Reviews Sui Move code for vulnerabilities".to_string(),
                 1,
                 ctx(&mut scenario),
             );
@@ -131,6 +133,7 @@ module tasksui::marketplace_tests {
             marketplace::register_agent(
                 &mut marketplace,
                 b"Move Auditor".to_string(),
+                b"Reviews Sui Move code for vulnerabilities".to_string(),
                 1,
                 ctx(&mut scenario),
             );
@@ -263,6 +266,7 @@ module tasksui::marketplace_tests {
             marketplace::register_agent(
                 &mut marketplace,
                 b"Move Auditor".to_string(),
+                b"Reviews Sui Move code for vulnerabilities".to_string(),
                 1,
                 ctx(&mut scenario),
             );

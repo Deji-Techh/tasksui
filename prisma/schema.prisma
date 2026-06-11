@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 model Agent {
@@ -23,6 +23,7 @@ model Agent {
   updatedAt        DateTime @updatedAt
 
   tasks            Task[]
+  results          TaskResult[]
 }
 
 model Task {
@@ -30,19 +31,85 @@ model Task {
   title              String
   description        String
   agentCategory      String
-  rewardMist         String   @default("0")
+  rewardMist         String    @default("0")
   creatorAddress     String?
   status             String    @default("PENDING_CHAIN")
   escrowId           String?
   suiTaskId          String?
+  inputText          String?
+  inputHash          String?
   outputText         String?
   proofHash          String?
   judgeVerdict       String?
   judgeRecommendation String?
   judgeNotes         String?
+  createTxDigest     String?
+  releaseTxDigest    String?
+  cancelTxDigest     String?
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
   agentId            String?
   agent              Agent?    @relation(fields: [agentId], references: [id])
+  result             TaskResult?
+  judgeReport        JudgeReport?
+  txLogs             TransactionLog[]
+}
+
+model TaskResult {
+  id                 String   @id @default(cuid())
+  taskId             String   @unique
+  agentId            String
+  fullOutput         String
+  summary            String?
+  resultHash         String
+  completionProofId  String?
+  submitTxDigest     String?
+  createdAt          DateTime @default(now())
+
+  task               Task     @relation(fields: [taskId], references: [id])
+  agent              Agent    @relation(fields: [agentId], references: [id])
+}
+
+model JudgeReport {
+  id             String   @id @default(cuid())
+  taskId         String   @unique
+  verdict        String
+  score          Int
+  reason         String
+  recommendation String
+  reportHash     String
+  judgeReportId  String?
+  txDigest       String?
+  createdAt      DateTime @default(now())
+
+  task           Task     @relation(fields: [taskId], references: [id])
+}
+
+model WalletAnalysisCache {
+  id              String   @id @default(cuid())
+  walletAddress   String
+  suiBalanceMist  String?
+  balancesJson    String?
+  objectsJson     String?
+  txsJson         String?
+  packageJson     String?
+  analysisSummary String?
+  behaviorLabel   String?
+  riskScore       Int?
+  createdAt       DateTime @default(now())
+
+  @@index([walletAddress])
+}
+
+model TransactionLog {
+  id          String   @id @default(cuid())
+  taskId      String?
+  txDigest    String
+  action      String
+  objectId    String?
+  status      String
+  createdAt   DateTime @default(now())
+
+  task        Task?    @relation(fields: [taskId], references: [id])
 }

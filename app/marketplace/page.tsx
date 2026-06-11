@@ -4,6 +4,8 @@ import { AGENT_CATEGORY_LABELS } from "@/lib/constants"
 import { prisma } from "@/lib/db"
 import type { LucideIcon } from "lucide-react"
 
+export const dynamic = "force-dynamic"
+
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   MOVE_AUDIT: Shield,
   RESEARCH_SUMMARY: FileText,
@@ -152,6 +154,27 @@ function AgentCard({ agent }: { agent: {
         </div>
         <span className="ts-market-card__score">
           {agent.reputationScore}%
+        </span>
+      </div>
+
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+        <span style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          padding: "2px 8px",
+          borderRadius: "var(--radius-full)",
+          background: agent.completedTasks > 0 ? "var(--status-green-bg)" : "var(--bg-secondary)",
+          color: agent.completedTasks > 0 ? "var(--status-green)" : "var(--fg-tertiary)",
+          fontSize: "var(--text-xs)",
+          fontWeight: 500,
+        }}>
+          <span style={{
+            width: 6, height: 6,
+            borderRadius: "var(--radius-full)",
+            background: agent.completedTasks > 0 ? "var(--status-green)" : "var(--fg-tertiary)",
+          }} />
+          {agent.completedTasks > 0 ? "Active" : "New"}
         </span>
       </div>
 

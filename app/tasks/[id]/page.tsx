@@ -16,7 +16,7 @@ export default async function TaskDetailPage({
   const { id } = await params
   const task = await prisma.task.findUnique({
     where: { id },
-    include: { agent: true },
+    include: { agent: true, result: true, judgeReport: true },
   })
 
   if (!task) return notFound()
@@ -28,6 +28,8 @@ export default async function TaskDetailPage({
   const hasJudge =
     task.status === TaskStatus.JUDGE_REVIEWED ||
     task.status === TaskStatus.RELEASED
+  const judge = task.judgeReport
+  const result = task.result
 
   return (
     <div className="ts-public-page">
@@ -132,7 +134,7 @@ export default async function TaskDetailPage({
               </div>
 
               {/* ── Agent output ── */}
-              {hasOutput && task.outputText && (
+              {hasOutput && result && (
                 <div className="ts-detail-card">
                   <div
                     style={{
@@ -144,21 +146,48 @@ export default async function TaskDetailPage({
                   >
                     <Bot size={16} style={{ color: "var(--accent)" }} />
                     <h3 style={{ margin: 0 }}>Agent Output</h3>
+                    {result.createdAt && (
+                      <span style={{
+                        marginLeft: "auto",
+                        color: "var(--fg-tertiary)",
+                        fontSize: "var(--text-xs)",
+                      }}>
+                        {new Date(result.createdAt).toLocaleString()}
+                      </span>
+                    )}
                   </div>
                   <div className="ts-output-block">
-                    <pre>{task.outputText}</pre>
+                    <pre>{result.fullOutput}</pre>
                   </div>
-                  {task.proofHash && (
+                  {result.resultHash && (
                     <div className="ts-proof-badge">
                       <Shield size={14} />
-                      <span>Proof: {task.proofHash.slice(0, 18)}...</span>
+                      <span>Proof: {result.resultHash.slice(0, 18)}...</span>
+                    </div>
+                  )}
+                  {result.submitTxDigest && (
+                    <div style={{ marginTop: 12, fontSize: "var(--text-xs)" }}>
+                      <span style={{ color: "var(--fg-tertiary)" }}>Submit tx: </span>
+                      <a
+                        href={explorerLink("tx", result.submitTxDigest)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          color: "var(--accent)",
+                          textDecoration: "none",
+                        }}
+                      >
+                        {result.submitTxDigest.slice(0, 10)}...{result.submitTxDigest.slice(-6)}
+                        <ExternalLink size={10} style={{ marginLeft: 4 }} />
+                      </a>
                     </div>
                   )}
                 </div>
               )}
 
               {/* ── Judge review ── */}
-              {hasJudge && task.judgeNotes && (
+              {hasJudge && judge && (
                 <div className="ts-detail-card">
                   <div
                     style={{
@@ -170,7 +199,7 @@ export default async function TaskDetailPage({
                   >
                     <FileText size={16} style={{ color: "var(--accent)" }} />
                     <h3 style={{ margin: 0 }}>AI Judge Review</h3>
-                    {task.judgeVerdict && (
+                    {judge.verdict && (
                       <span
                         style={{
                           marginLeft: "auto",
@@ -186,7 +215,7 @@ export default async function TaskDetailPage({
                           fontWeight: 500,
                         }}
                       >
-                        {task.judgeVerdict}
+                        {judge.verdict}
                       </span>
                     )}
                   </div>
@@ -197,9 +226,15 @@ export default async function TaskDetailPage({
                       lineHeight: 1.6,
                     }}
                   >
-                    {task.judgeNotes}
+                    {judge.reason}
                   </p>
-                  {task.judgeRecommendation && (
+                  {judge.reportHash && (
+                    <div className="ts-proof-badge">
+                      <Shield size={14} />
+                      <span>Report: {judge.reportHash.slice(0, 18)}...</span>
+                    </div>
+                  )}
+                  {judge.recommendation && (
                     <div
                       style={{
                         marginTop: 16,
@@ -214,7 +249,7 @@ export default async function TaskDetailPage({
                     >
                       <Check size={16} style={{ color: "var(--status-green)" }} />
                       <span style={{ color: "var(--fg)", fontWeight: 500 }}>
-                        Recommendation: {task.judgeRecommendation}
+                        Recommendation: {judge.recommendation}
                       </span>
                     </div>
                   )}
