@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
-import { ArrowRight, Bot, Check, ClipboardCheck, Eye, FileText, Loader2, Shield } from "lucide-react"
+import { ArrowRight, Check, ClipboardCheck, Eye, FileText, Loader2, Shield } from "lucide-react"
 import { Form, FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -31,6 +31,9 @@ type FormValues = z.infer<typeof formSchema>
 export default function CreateTaskPage() {
   const router = useRouter()
   const [submitted, setSubmitted] = useState(false)
+  const [createdId, setCreatedId] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema) as any,
@@ -42,11 +45,27 @@ export default function CreateTaskPage() {
     },
   })
 
-  const onSubmit = (values: FormValues) => {
-    // Mock submission — will be replaced with API call
-    console.log("Task created:", values)
-    setSubmitted(true)
-    setTimeout(() => router.push("/marketplace"), 2000)
+  const onSubmit = async (values: FormValues) => {
+    setError(null)
+    setLoading(true)
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(values),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error ?? "Failed to create task")
+      }
+      const task = await res.json()
+      setCreatedId(task.id)
+      setSubmitted(true)
+      setTimeout(() => router.push(`/tasks/${task.id}`), 2000)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong")
+      setLoading(false)
+    }
   }
 
   if (submitted) {
@@ -192,13 +211,28 @@ export default function CreateTaskPage() {
                   )}
                 />
 
+                {error && (
+                  <div
+                    style={{
+                      padding: "12px 16px",
+                      border: "1px solid var(--status-red)",
+                      borderRadius: "var(--radius-md)",
+                      background: "var(--status-red-bg)",
+                      color: "var(--status-red)",
+                      fontSize: "14px",
+                    }}
+                  >
+                    {error}
+                  </div>
+                )}
+
                 <button
                   type="submit"
                   className="ts-button ts-button--primary"
-                  disabled={form.formState.isSubmitting}
+                  disabled={loading}
                   style={{ width: "100%", justifyContent: "center" }}
                 >
-                  {form.formState.isSubmitting ? (
+                  {loading ? (
                     <Loader2 size={16} style={{ animation: "spin 1s linear infinite" }} />
                   ) : (
                     <>

@@ -1,6 +1,7 @@
 import Link from "next/link"
 import { ArrowRight, Bot, Shield, Eye, FileText } from "lucide-react"
-import { SEEDED_AGENTS, AGENT_CATEGORY_LABELS, type AgentSeed } from "@/lib/constants"
+import { AGENT_CATEGORY_LABELS } from "@/lib/constants"
+import { prisma } from "@/lib/db"
 import type { LucideIcon } from "lucide-react"
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -9,7 +10,11 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   WALLET_ANALYSIS: Eye,
 }
 
-export default function MarketplacePage() {
+export default async function MarketplacePage() {
+  const agents = await prisma.agent.findMany({
+    orderBy: { reputationScore: "desc" },
+  })
+
   return (
     <div className="ts-public-page">
       <main>
@@ -25,7 +30,7 @@ export default function MarketplacePage() {
           </div>
 
           <div className="ts-agent-grid">
-            {SEEDED_AGENTS.map((agent) => (
+            {agents.map((agent) => (
               <AgentCard key={agent.id} agent={agent} />
             ))}
           </div>
@@ -43,7 +48,7 @@ export default function MarketplacePage() {
           </div>
 
           <div className="ts-reputation-grid">
-            {SEEDED_AGENTS.map((agent) => (
+            {agents.map((agent) => (
               <div className="ts-reputation-card" key={agent.id}>
                 <div className="ts-reputation-card__header">
                   <span>{agent.name}</span>
@@ -126,7 +131,11 @@ export default function MarketplacePage() {
   )
 }
 
-function AgentCard({ agent }: { agent: AgentSeed }) {
+function AgentCard({ agent }: { agent: {
+  id: string; name: string; category: string; description: string;
+  reputationScore: number; completedTasks: number; disputedTasks: number;
+  totalEarnedMist: string;
+} }) {
   const Icon = CATEGORY_ICONS[agent.category] ?? Bot
 
   return (
@@ -137,7 +146,7 @@ function AgentCard({ agent }: { agent: AgentSeed }) {
         </span>
         <div>
           <span className="ts-market-card__category">
-            {AGENT_CATEGORY_LABELS[agent.category]}
+            {AGENT_CATEGORY_LABELS[agent.category as keyof typeof AGENT_CATEGORY_LABELS]}
           </span>
           <h3>{agent.name}</h3>
         </div>
