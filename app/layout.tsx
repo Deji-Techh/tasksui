@@ -1,6 +1,7 @@
 import type { Metadata } from "next"
 import { Geist, Geist_Mono } from "next/font/google"
 import { ThemeProvider } from "@/components/theme/ThemeProvider"
+import { SuiProvider } from "@/components/sui/SuiProvider"
 import { Navbar } from "@/components/layout/Navbar"
 import "./globals.css"
 
@@ -33,8 +34,10 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <ThemeProvider>
-          <Navbar />
-          <main className="flex-1">{children}</main>
+          <SuiProvider>
+            <Navbar />
+            <main className="flex-1">{children}</main>
+          </SuiProvider>
         </ThemeProvider>
       </body>
     </html>

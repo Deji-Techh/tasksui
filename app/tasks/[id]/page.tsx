@@ -1,9 +1,11 @@
 import Link from "next/link"
-import { ArrowRight, Bot, Check, FileText, Shield } from "lucide-react"
+import { ArrowRight, Bot, Check, ExternalLink, FileText, Shield } from "lucide-react"
 import { TaskStatusBadge } from "@/components/tasks/TaskStatusBadge"
 import { TaskLifecycle } from "@/components/tasks/TaskLifecycle"
 import { TaskStatus, AGENT_CATEGORY_LABELS } from "@/lib/constants"
 import { prisma } from "@/lib/db"
+import { explorerLink } from "@/lib/sui/client"
+import { TaskActions } from "@/components/tasks/TaskActions"
 import { notFound } from "next/navigation"
 
 export default async function TaskDetailPage({
@@ -77,15 +79,47 @@ export default async function TaskDetailPage({
                   {task.escrowId && (
                     <div>
                       <span>Escrow ID</span>
-                      <strong
+                      <a
+                        href={explorerLink("object", task.escrowId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
                           fontFamily: "var(--font-mono)",
                           fontSize: "var(--text-sm)",
+                          color: "var(--accent)",
+                          textDecoration: "none",
                         }}
                       >
                         {task.escrowId.slice(0, 10)}...
                         {task.escrowId.slice(-6)}
-                      </strong>
+                        <ExternalLink size={12} />
+                      </a>
+                    </div>
+                  )}
+                  {task.suiTaskId && (
+                    <div>
+                      <span>Sui Task</span>
+                      <a
+                        href={explorerLink("object", task.suiTaskId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "var(--text-sm)",
+                          color: "var(--accent)",
+                          textDecoration: "none",
+                        }}
+                      >
+                        {task.suiTaskId.slice(0, 10)}...
+                        {task.suiTaskId.slice(-6)}
+                        <ExternalLink size={12} />
+                      </a>
                     </div>
                   )}
                   <div>
@@ -199,10 +233,18 @@ export default async function TaskDetailPage({
                 />
               </div>
 
-              <div className="ts-detail-card">
-                <h3>Actions</h3>
-                <div style={{ display: "grid", gap: 8 }}>
-                  {task.agent && (
+              <TaskActions
+                taskId={task.id}
+                status={task.status}
+                suiTaskId={task.suiTaskId}
+                escrowId={task.escrowId}
+                agentId={task.agent?.suiObjectId ?? null}
+              />
+
+              {task.agent && (
+                <div className="ts-detail-card">
+                  <h3>Agent</h3>
+                  <div style={{ display: "grid", gap: 8 }}>
                     <Link
                       href={`/agents/${task.agent.id}`}
                       className="ts-button ts-button--secondary"
@@ -210,7 +252,13 @@ export default async function TaskDetailPage({
                     >
                       View Agent <ArrowRight size={14} />
                     </Link>
-                  )}
+                  </div>
+                </div>
+              )}
+
+              <div className="ts-detail-card">
+                <h3>Create</h3>
+                <div style={{ display: "grid", gap: 8 }}>
                   <Link
                     href="/create"
                     className="ts-button ts-button--primary"

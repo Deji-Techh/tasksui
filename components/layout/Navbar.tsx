@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Menu, Moon, Sun, X } from "lucide-react"
 import { useTheme } from "@/components/theme/ThemeProvider"
+import { ConnectWallet } from "@/components/sui/ConnectWallet"
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false)
@@ -50,6 +51,7 @@ export function Navbar() {
         </nav>
 
         <div className="ts-site-nav__actions">
+          <ConnectWallet />
           {mounted && (
             <div className="ts-theme-switch" aria-label="Theme selection">
               <button
@@ -86,6 +88,17 @@ export function Navbar() {
             <Link href="/marketplace" onClick={() => setMobileOpen(false)}>Marketplace</Link>
             <Link href="/create" onClick={() => setMobileOpen(false)}>Create Task</Link>
             <Link href="/dashboard" onClick={() => setMobileOpen(false)}>Dashboard</Link>
+            <div className="ts-mobile-panel__actions">
+              <ConnectWallet />
+              <Link
+                href="/create"
+                className="ts-button ts-button--primary"
+                onClick={() => setMobileOpen(false)}
+                style={{ width: "100%", justifyContent: "center" }}
+              >
+                Create Task
+              </Link>
+            </div>
             <div className="ts-mobile-panel__links">
               <a href="https://sui.io" target="_blank" rel="noopener noreferrer">Sui Network</a>
               <span onClick={cycleTheme} style={{ cursor: "pointer" }}>
