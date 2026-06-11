@@ -5,6 +5,15 @@ const MODULE = "marketplace"
 const MARKETPLACE_ID =
   process.env["NEXT_PUBLIC_TASKSUI_MARKETPLACE_ID"] ?? "0x0"
 
+/**
+ * Compute SHA-256 hash of a description string. Returns 32 bytes.
+ */
+export async function hashDescription(description: string): Promise<Uint8Array> {
+  return new Uint8Array(
+    await crypto.subtle.digest("SHA-256", new TextEncoder().encode(description)),
+  )
+}
+
 export function toBytes(hex: string): Uint8Array {
   const h = hex.startsWith("0x") ? hex.slice(2) : hex
   const bytes = new Uint8Array(h.length / 2)
@@ -16,15 +25,13 @@ export function toBytes(hex: string): Uint8Array {
 
 /**
  * Create task + fund escrow. Splits payment from gas coin.
+ * descriptionHash must be a 32-byte SHA-256 hash of the task description.
  */
 export function createTaskTx(
-  description: string,
+  descriptionHash: Uint8Array,
   category: number,
   rewardMist: bigint,
 ) {
-  const descriptionHash = new Uint8Array(
-    new TextEncoder().encode(description).slice(0, 32),
-  )
   const tx = new Transaction()
   const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(rewardMist)])
   tx.moveCall({

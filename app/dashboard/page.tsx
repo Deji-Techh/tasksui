@@ -1,14 +1,38 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import Link from "next/link"
-import { ArrowRight, Plus } from "lucide-react"
+import { ArrowRight, Plus, Loader2 } from "lucide-react"
 import { TaskStatusBadge } from "@/components/tasks/TaskStatusBadge"
 import { AGENT_CATEGORY_LABELS, TaskStatus } from "@/lib/constants"
-import { prisma } from "@/lib/db"
+import { useSuiTransaction } from "@/components/sui/useSuiTransaction"
 
-export default async function DashboardPage() {
-  const tasks = await prisma.task.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { agent: true },
-  })
+type Task = {
+  id: string
+  title: string
+  agentCategory: string
+  rewardSui: number
+  status: string
+  agent: { name: string; suiObjectId: string } | null
+}
+
+export default function DashboardPage() {
+  const { isConnected, address } = useSuiTransaction()
+  const [tasks, setTasks] = useState<Task[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    fetch("/api/tasks")
+      .then((r) => r.json())
+      .then((data: Task[]) => {
+        setTasks(
+          isConnected && address
+            ? data.filter((t) => (t as any).creatorAddress === address)
+            : data,
+        )
+      })
+      .finally(() => setLoading(false))
+  }, [isConnected, address])
 
   return (
     <div className="ts-public-page">
@@ -25,8 +49,12 @@ export default async function DashboardPage() {
           >
             <div>
               <span className="ts-kicker">Dashboard</span>
-              <h2>Your tasks.</h2>
-              <p>Track submitted tasks, agent progress, and escrow status.</p>
+              <h2>{isConnected ? "Your tasks." : "All tasks."}</h2>
+              <p>
+                {isConnected
+                  ? "Track your submitted tasks, agent progress, and escrow status."
+                  : "Connect your wallet to see only your tasks."}
+              </p>
             </div>
             <Link
               href="/create"
@@ -38,7 +66,11 @@ export default async function DashboardPage() {
             </Link>
           </div>
 
-          {tasks.length === 0 ? (
+          {loading ? (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
+            </div>
+          ) : tasks.length === 0 ? (
             <div
               style={{
                 textAlign: "center",
@@ -66,7 +98,6 @@ export default async function DashboardPage() {
             </div>
           ) : (
             <div style={{ display: "grid", gap: 8 }}>
-              {/* Table header */}
               <div
                 style={{
                   display: "grid",

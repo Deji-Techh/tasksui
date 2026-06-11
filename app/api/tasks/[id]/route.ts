@@ -24,11 +24,30 @@ export async function PATCH(
 ) {
   const { id } = await params
   const body = await request.json()
-  const { action } = body
+  const { action, creatorAddress } = body
 
   const task = await prisma.task.findUnique({ where: { id } })
   if (!task) {
     return NextResponse.json({ error: "Task not found" }, { status: 404 })
+  }
+
+  // Ownership check — if task has a creator, only that address can act
+  if (task.creatorAddress && creatorAddress && task.creatorAddress !== creatorAddress) {
+    return NextResponse.json(
+      { error: "Not authorized to modify this task" },
+      { status: 403 }
+    )
+  }
+
+  const actionsRequiringOwner = [
+    "run_agent", "run_judge", "confirm_chain", "confirm_submission",
+    "confirm_judge", "release", "dispute", "cancel",
+  ]
+  if (actionsRequiringOwner.includes(action) && !creatorAddress && task.creatorAddress) {
+    return NextResponse.json(
+      { error: "Creator address required for this action" },
+      { status: 403 }
+    )
   }
 
   switch (action) {
@@ -150,17 +169,18 @@ export async function PATCH(
       }
       const agentUpdate =
         task.agentId
-          ? prisma.agent.update({
-              where: { id: task.agentId },
-              data: {
-                completedTasks: { increment: 1 },
-                totalEarnedMist: String(
-                  BigInt(
-                    Math.floor(task.rewardSui * 1_000_000_000)
-                  ),
-                ),
-              },
-            })
+          ? (async () => {
+              const agent = await prisma.agent.findUnique({ where: { id: task.agentId! } })
+              const currentEarned = agent ? BigInt(agent.totalEarnedMist) : BigInt(0)
+              const rewardMist = BigInt(Math.floor(task.rewardSui * 1_000_000_000))
+              return prisma.agent.update({
+                where: { id: task.agentId! },
+                data: {
+                  completedTasks: { increment: 1 },
+                  totalEarnedMist: String(currentEarned + rewardMist),
+                },
+              })
+            })()
           : Promise.resolve(null)
 
       const updated = await prisma.task.update({

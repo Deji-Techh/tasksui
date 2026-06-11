@@ -31,6 +31,7 @@ model Task {
   description        String
   agentCategory      String
   rewardSui          Float
+  creatorAddress     String?
   status             String    @default("PENDING_CHAIN")
   escrowId           String?
   suiTaskId          String?

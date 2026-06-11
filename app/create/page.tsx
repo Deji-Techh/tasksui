@@ -52,7 +52,7 @@ function extractTaskObjectId(result: unknown): string | null {
 
 export default function CreateTaskPage() {
   const router = useRouter()
-  const { signAndExecute, isSigning, error: txError, isConnected } = useSuiTransaction()
+  const { signAndExecute, isSigning, error: txError, isConnected, address } = useSuiTransaction()
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -74,7 +74,7 @@ export default function CreateTaskPage() {
       const res = await fetch("/api/tasks", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(values),
+        body: JSON.stringify({ ...values, creatorAddress: address }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -83,9 +83,10 @@ export default function CreateTaskPage() {
       const task = await res.json()
 
       if (isConnected) {
-        const { createTaskTx } = await import("@/lib/sui/transactions")
+        const { createTaskTx, hashDescription } = await import("@/lib/sui/transactions")
         const rewardMist = BigInt(Math.floor(values.rewardSui * 1_000_000_000))
-        const tx = createTaskTx(values.description, CATEGORY_MAP[values.agentCategory] ?? 2, rewardMist)
+        const descHash = await hashDescription(values.description)
+        const tx = createTaskTx(descHash, CATEGORY_MAP[values.agentCategory] ?? 2, rewardMist)
         const result = await signAndExecute(tx)
         if (result) {
           await fetch(`/api/tasks/${task.id}`, {

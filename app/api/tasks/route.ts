@@ -11,7 +11,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { title, description, agentCategory, rewardSui } = body
+  const { title, description, agentCategory, rewardSui, creatorAddress } = body
 
   if (!title || !description || !agentCategory || rewardSui == null) {
     return NextResponse.json(
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
       description,
       agentCategory,
       rewardSui,
+      creatorAddress: creatorAddress ?? null,
       status: "PENDING_CHAIN",
     },
   })

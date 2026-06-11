@@ -1,5 +1,6 @@
 module tasksui::marketplace {
     use std::string::String;
+    use std::vector;
     use sui::coin::{Self, Coin};
     use sui::balance::{Self, Balance};
     use sui::sui::SUI;
@@ -252,6 +253,10 @@ module tasksui::marketplace {
             tasksui::task_types::e_not_authorized()
         );
         assert!(
+            vector::length(&proof_hash) > 0,
+            tasksui::task_types::e_invalid_proof()
+        );
+        assert!(
             task.status == tasksui::task_types::status_running(),
             tasksui::task_types::e_invalid_status_transition()
         );
@@ -307,6 +312,10 @@ module tasksui::marketplace {
             tasksui::task_types::e_not_authorized()
         );
         assert!(
+            object::id(agent).to_address() == task.agent_id,
+            tasksui::task_types::e_not_authorized()
+        );
+        assert!(
             task.status == tasksui::task_types::status_submitted()
                 || task.status == tasksui::task_types::status_judge_reviewed(),
             tasksui::task_types::e_not_ready_for_release()
@@ -337,7 +346,7 @@ module tasksui::marketplace {
             tasksui::task_types::e_not_authorized()
         );
         assert!(
-            task.status != tasksui::task_types::status_released(),
+            task.status == tasksui::task_types::status_funded(),
             tasksui::task_types::e_cannot_cancel()
         );
 
@@ -361,6 +370,10 @@ module tasksui::marketplace {
     ) {
         assert!(
             tx_context::sender(ctx) == task.creator,
+            tasksui::task_types::e_not_authorized()
+        );
+        assert!(
+            object::id(agent).to_address() == task.agent_id,
             tasksui::task_types::e_not_authorized()
         );
         assert!(

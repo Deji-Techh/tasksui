@@ -54,7 +54,7 @@ export function TaskActions({
   description, agentCategory, rewardSui,
 }: Props) {
   const router = useRouter()
-  const { signAndExecute, isSigning, error, isConnected } = useSuiTransaction()
+  const { signAndExecute, isSigning, error, isConnected, address } = useSuiTransaction()
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
 
@@ -62,7 +62,7 @@ export function TaskActions({
     const res = await fetch(`/api/tasks/${taskId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, ...body }),
+      body: JSON.stringify({ action, creatorAddress: address, ...body }),
     })
     if (!res.ok) {
       const data = await res.json()
@@ -85,9 +85,10 @@ export function TaskActions({
   }
 
   const handleFundEscrow = () => runAction("fund", async () => {
-    const { createTaskTx } = await import("@/lib/sui/transactions")
+    const { createTaskTx, hashDescription } = await import("@/lib/sui/transactions")
     const rewardMist = BigInt(Math.floor(rewardSui * 1_000_000_000))
-    const tx = createTaskTx(description, CATEGORY_MAP[agentCategory] ?? 2, rewardMist)
+    const descHash = await hashDescription(description)
+    const tx = createTaskTx(descHash, CATEGORY_MAP[agentCategory] ?? 2, rewardMist)
     const result = await signAndExecute(tx)
     if (!result) throw new Error("Transaction was not signed")
     await callApi("confirm_chain", {

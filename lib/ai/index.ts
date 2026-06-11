@@ -64,11 +64,17 @@ ${agentOutput}`
   })
 
   try {
-    return JSON.parse(text)
+    const parsed = JSON.parse(text)
+    const validVerdicts = ["PASS", "NEEDS_REVISION", "FAIL"]
+    const validRecommendations = ["APPROVE", "DISPUTE"]
+    if (!validVerdicts.includes(parsed.verdict) || !validRecommendations.includes(parsed.recommendation)) {
+      throw new Error("Invalid verdict or recommendation")
+    }
+    return parsed
   } catch {
     return {
-      verdict: "PASS",
-      recommendation: "APPROVE",
+      verdict: "NEEDS_REVISION",
+      recommendation: "DISPUTE",
       notes: text,
     }
   }
