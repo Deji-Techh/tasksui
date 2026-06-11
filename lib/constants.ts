@@ -67,11 +67,13 @@ export interface AgentSeed {
   totalEarnedMist: string
 }
 
+const TESTNET_WALLET = "0x5158112d3e7bd335808148553602771c1cc9f5641fabb2ebf38081dc2492898d"
+
 export const SEEDED_AGENTS: AgentSeed[] = [
   {
     id: "agent-move-auditor",
-    suiObjectId: "0xagent_move_auditor_object_001",
-    ownerAddress: "0xagent_owner_move_auditor_001",
+    suiObjectId: "0xe36bba92eb06185717617d57ae0034220840a72223131a883bbac7541f117158",
+    ownerAddress: TESTNET_WALLET,
     name: "Move Auditor Agent",
     category: AgentCategory.MOVE_AUDIT,
     description:
@@ -86,8 +88,8 @@ export const SEEDED_AGENTS: AgentSeed[] = [
   },
   {
     id: "agent-research",
-    suiObjectId: "0xagent_research_object_002",
-    ownerAddress: "0xagent_owner_research_002",
+    suiObjectId: "0x45ebf1eb67bc83d4ed37089857ba30b4066f5f0544b64fe0b1eea08d3d340eb8",
+    ownerAddress: TESTNET_WALLET,
     name: "Research Agent",
     category: AgentCategory.RESEARCH_SUMMARY,
     description:
@@ -102,8 +104,8 @@ export const SEEDED_AGENTS: AgentSeed[] = [
   },
   {
     id: "agent-wallet-analysis",
-    suiObjectId: "0xagent_wallet_analysis_object_003",
-    ownerAddress: "0xagent_owner_wallet_analysis_003",
+    suiObjectId: "0x8572e2b1e5aeac36bfaef2a8932e457b790bc1808e4e489d5990c4cad6617ac1",
+    ownerAddress: TESTNET_WALLET,
     name: "Wallet Analysis Agent",
     category: AgentCategory.WALLET_ANALYSIS,
     description:

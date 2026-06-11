@@ -237,7 +237,7 @@ export function TaskActions({
             </button>
             <button className="ts-button ts-button--secondary" onClick={handleReject}
               disabled={btn("reject")} style={{ width: "100%", justifyContent: "center" }}>
-              {btn("reject") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><X size={14} /> Reject</>}
+              {btn("reject") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><X size={14} /> Reject & Refund</>}
             </button>
           </>
         )}
@@ -251,7 +251,7 @@ export function TaskActions({
             </button>
             <button className="ts-button ts-button--secondary" onClick={handleReject}
               disabled={btn("reject")} style={{ width: "100%", justifyContent: "center" }}>
-              {btn("reject") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><X size={14} /> Reject</>}
+              {btn("reject") ? <Loader2 size={14} style={{ animation: "spin 1s linear infinite" }} /> : <><X size={14} /> Reject & Refund</>}
             </button>
           </>
         )}

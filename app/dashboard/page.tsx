@@ -11,7 +11,7 @@ type Task = {
   id: string
   title: string
   agentCategory: string
-  rewardSui: number
+  rewardMist: string
   status: string
   agent: { name: string; suiObjectId: string } | null
 }
@@ -22,15 +22,12 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/tasks")
+    const url = isConnected && address
+      ? `/api/tasks?creatorAddress=${address}`
+      : "/api/tasks"
+    fetch(url)
       .then((r) => r.json())
-      .then((data: Task[]) => {
-        setTasks(
-          isConnected && address
-            ? data.filter((t) => (t as any).creatorAddress === address)
-            : data,
-        )
-      })
+      .then(setTasks)
       .finally(() => setLoading(false))
   }, [isConnected, address])
 
@@ -53,7 +50,7 @@ export default function DashboardPage() {
               <p>
                 {isConnected
                   ? "Track your submitted tasks, agent progress, and escrow status."
-                  : "Connect your wallet to see only your tasks."}
+                  : "Connect your wallet to see your tasks."}
               </p>
             </div>
             <Link
@@ -174,7 +171,7 @@ export default function DashboardPage() {
                       fontFamily: "var(--font-mono)",
                     }}
                   >
-                    {task.rewardSui} SUI
+                    {Number(task.rewardMist) / 1_000_000_000} SUI
                   </span>
                   <TaskStatusBadge
                     status={

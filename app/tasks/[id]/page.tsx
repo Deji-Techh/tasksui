@@ -74,7 +74,7 @@ export default async function TaskDetailPage({
                   </div>
                   <div>
                     <span>Reward</span>
-                    <strong>{task.rewardSui} SUI</strong>
+                    <strong>{Number(task.rewardMist) / 1_000_000_000} SUI</strong>
                   </div>
                   {task.escrowId && (
                     <div>
@@ -241,7 +241,7 @@ export default async function TaskDetailPage({
                 agentId={task.agent?.suiObjectId ?? null}
                 description={task.description}
                 agentCategory={task.agentCategory}
-                rewardSui={task.rewardSui}
+                rewardSui={Number(task.rewardMist) / 1_000_000_000}
               />
 
               {task.agent && (

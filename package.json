@@ -9,7 +9,10 @@
     "lint": "eslint",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:push": "npx prisma db push",
-    "db:generate": "npx prisma generate"
+    "db:generate": "npx prisma generate",
+    "typecheck": "tsc --noEmit",
+    "move:test": "cd contracts/tasksui && sui move test",
+    "check": "pnpm lint && pnpm typecheck && pnpm build"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.69",

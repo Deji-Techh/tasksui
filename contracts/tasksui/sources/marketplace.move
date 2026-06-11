@@ -287,6 +287,14 @@ module tasksui::marketplace {
             task.status == tasksui::task_types::status_submitted(),
             tasksui::task_types::e_invalid_status_transition()
         );
+        assert!(
+            verdict <= 2,
+            tasksui::task_types::e_invalid_judge_report()
+        );
+        assert!(
+            recommendation <= 1,
+            tasksui::task_types::e_invalid_judge_report()
+        );
 
         task.status = tasksui::task_types::status_judge_reviewed();
         task.judge_verdict = verdict;

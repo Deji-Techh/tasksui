@@ -8,7 +8,9 @@ const adapter = new PrismaLibSql({
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
-  console.log("Seeding agents...")
+  console.log("Clearing old agents and re-seeding...")
+  await prisma.task.updateMany({ data: { agentId: null } })
+  await prisma.agent.deleteMany()
 
   for (const agent of SEEDED_AGENTS) {
     await prisma.agent.upsert({

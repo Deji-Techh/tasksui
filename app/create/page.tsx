@@ -89,15 +89,19 @@ export default function CreateTaskPage() {
         const tx = createTaskTx(descHash, CATEGORY_MAP[values.agentCategory] ?? 2, rewardMist)
         const result = await signAndExecute(tx)
         if (result) {
-          await fetch(`/api/tasks/${task.id}`, {
+          const confirmRes = await fetch(`/api/tasks/${task.id}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               action: "confirm_chain",
+              creatorAddress: address,
               txDigest: extractDigest(result),
               suiTaskId: extractTaskObjectId(result),
             }),
           })
+          if (!confirmRes.ok) {
+            console.error("Chain confirmation failed:", await confirmRes.json())
+          }
         }
       }
 

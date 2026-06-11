@@ -31,23 +31,24 @@ export async function PATCH(
     return NextResponse.json({ error: "Task not found" }, { status: 404 })
   }
 
-  // Ownership check — if task has a creator, only that address can act
-  if (task.creatorAddress && creatorAddress && task.creatorAddress !== creatorAddress) {
-    return NextResponse.json(
-      { error: "Not authorized to modify this task" },
-      { status: 403 }
-    )
-  }
-
+  // Protected actions require a creator on the task AND a matching caller
   const actionsRequiringOwner = [
     "run_agent", "run_judge", "confirm_chain", "confirm_submission",
     "confirm_judge", "release", "dispute", "cancel",
   ]
-  if (actionsRequiringOwner.includes(action) && !creatorAddress && task.creatorAddress) {
-    return NextResponse.json(
-      { error: "Creator address required for this action" },
-      { status: 403 }
-    )
+  if (actionsRequiringOwner.includes(action)) {
+    if (!task.creatorAddress) {
+      return NextResponse.json(
+        { error: "Task has no owner — cannot perform this action" },
+        { status: 403 }
+      )
+    }
+    if (!creatorAddress || task.creatorAddress !== creatorAddress) {
+      return NextResponse.json(
+        { error: "Not authorized to modify this task" },
+        { status: 403 }
+      )
+    }
   }
 
   switch (action) {
@@ -167,17 +168,29 @@ export async function PATCH(
           { status: 400 }
         )
       }
+      const { txDigest } = body
+      if (txDigest) {
+        const { verifySuiTx } = await import("@/lib/sui/client")
+        const verified = await verifySuiTx(txDigest, task.creatorAddress ?? undefined)
+        if (!verified.ok) {
+          return NextResponse.json(
+            { error: `Transaction verification failed: ${verified.error}` },
+            { status: 400 }
+          )
+        }
+      }
+
       const agentUpdate =
         task.agentId
           ? (async () => {
               const agent = await prisma.agent.findUnique({ where: { id: task.agentId! } })
               const currentEarned = agent ? BigInt(agent.totalEarnedMist) : BigInt(0)
-              const rewardMist = BigInt(Math.floor(task.rewardSui * 1_000_000_000))
+              const rewardMistVal = BigInt(task.rewardMist)
               return prisma.agent.update({
                 where: { id: task.agentId! },
                 data: {
                   completedTasks: { increment: 1 },
-                  totalEarnedMist: String(currentEarned + rewardMist),
+                  totalEarnedMist: String(currentEarned + rewardMistVal),
                 },
               })
             })()

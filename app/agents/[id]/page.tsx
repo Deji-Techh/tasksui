@@ -177,7 +177,7 @@ export default async function AgentDetailPage({
                             fontSize: "var(--text-xs)",
                           }}
                         >
-                          {task.status} &middot; {task.rewardSui} SUI
+                          {task.status} &middot; {Number(task.rewardMist) / 1_000_000_000} SUI
                         </div>
                       </Link>
                     ))}
