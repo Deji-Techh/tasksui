@@ -6,8 +6,11 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
     const creatorAddress = searchParams.get("creatorAddress")
+    if (!creatorAddress) {
+      return NextResponse.json([])
+    }
     const tasks = await prisma.task.findMany({
-      where: creatorAddress ? { creatorAddress } : undefined,
+      where: { creatorAddress },
       orderBy: { createdAt: "desc" },
       include: { agent: true },
     })

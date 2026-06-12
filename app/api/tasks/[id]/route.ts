@@ -32,6 +32,19 @@ function mapVerdictToScore(verdict: string): number {
   return 0
 }
 
+function requireSuiTaskId(task: { suiTaskId: string | null }) {
+  if (!task.suiTaskId) {
+    return {
+      ok: false as const,
+      response: NextResponse.json(
+        { error: "Missing Sui task object ID on task" },
+        { status: 400 },
+      ),
+    }
+  }
+  return { ok: true as const, suiTaskId: task.suiTaskId }
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -71,7 +84,7 @@ export async function PATCH(
     // Protected actions require a creator on the task AND a matching caller
     const actionsRequiringOwner = [
       "run_agent", "run_judge", "confirm_chain", "confirm_submission",
-      "confirm_judge", "release", "dispute", "cancel",
+      "confirm_judge", "release", "dispute", "cancel", "discard",
     ]
     if (actionsRequiringOwner.includes(action)) {
       if (!task.creatorAddress) {
@@ -237,9 +250,11 @@ export async function PATCH(
       // ── confirm_submission: verify on-chain tx, then set SUBMITTED ──
       case "confirm_submission": {
         const { txDigest } = body
+        const taskObject = requireSuiTaskId(task)
+        if (!taskObject.ok) return taskObject.response
         const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
           action: "confirm_submission",
-          suiTaskId: task.suiTaskId ?? undefined,
+          suiTaskId: taskObject.suiTaskId,
         })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
@@ -262,9 +277,11 @@ export async function PATCH(
       // ── confirm_judge: verify on-chain tx, then set JUDGE_REVIEWED ──
       case "confirm_judge": {
         const { txDigest } = body
+        const taskObject = requireSuiTaskId(task)
+        if (!taskObject.ok) return taskObject.response
         const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
           action: "confirm_judge",
-          suiTaskId: task.suiTaskId ?? undefined,
+          suiTaskId: taskObject.suiTaskId,
         })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
@@ -316,9 +333,11 @@ export async function PATCH(
           )
         }
         const { txDigest } = body
+        const taskObject = requireSuiTaskId(task)
+        if (!taskObject.ok) return taskObject.response
         const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
           action: "release",
-          suiTaskId: task.suiTaskId ?? undefined,
+          suiTaskId: taskObject.suiTaskId,
         })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
@@ -359,9 +378,11 @@ export async function PATCH(
           )
         }
         const { txDigest } = body
+        const taskObject = requireSuiTaskId(task)
+        if (!taskObject.ok) return taskObject.response
         const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
           action: "dispute",
-          suiTaskId: task.suiTaskId ?? undefined,
+          suiTaskId: taskObject.suiTaskId,
         })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
@@ -406,9 +427,11 @@ export async function PATCH(
           )
         }
         const { txDigest } = body
+        const taskObject = requireSuiTaskId(task)
+        if (!taskObject.ok) return taskObject.response
         const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
           action: "cancel",
-          suiTaskId: task.suiTaskId ?? undefined,
+          suiTaskId: taskObject.suiTaskId,
         })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 

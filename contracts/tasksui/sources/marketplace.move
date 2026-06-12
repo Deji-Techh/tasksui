@@ -178,6 +178,10 @@ module tasksui::marketplace {
     ) {
         assert!(reward > 0, tasksui::task_types::e_insufficient_reward());
         assert!(
+            vector::length(&description_hash) == 32,
+            tasksui::task_types::e_invalid_proof()
+        );
+        assert!(
             coin::value(&payment) >= reward,
             tasksui::task_types::e_insufficient_reward()
         );

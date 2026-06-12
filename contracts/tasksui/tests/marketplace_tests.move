@@ -10,6 +10,10 @@ module tasksui::marketplace_tests {
         coin::mint_for_testing<SUI>(amount, ctx(scenario))
     }
 
+    fun valid_hash(): vector<u8> {
+        b"12345678901234567890123456789012".to_string().into_bytes()
+    }
+
     #[test]
     fun test_init() {
         let mut scenario = test_scenario::begin(@0xA);
@@ -87,7 +91,7 @@ module tasksui::marketplace_tests {
         {
             let payment = mint_sui(reward, &mut scenario);
             let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
-            let desc_hash = b"task-hash-001".to_string().into_bytes();
+            let desc_hash = valid_hash();
 
             marketplace::create_task(
                 &mut marketplace,
@@ -145,7 +149,7 @@ module tasksui::marketplace_tests {
         {
             let payment = mint_sui(reward, &mut scenario);
             let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
-            let desc_hash = b"task-hash-001".to_string().into_bytes();
+            let desc_hash = valid_hash();
 
             marketplace::create_task(
                 &mut marketplace,
@@ -219,7 +223,7 @@ module tasksui::marketplace_tests {
         {
             let payment = mint_sui(reward, &mut scenario);
             let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
-            let desc_hash = b"task-hash".to_string().into_bytes();
+            let desc_hash = valid_hash();
 
             marketplace::create_task(
                 &mut marketplace,
@@ -278,7 +282,7 @@ module tasksui::marketplace_tests {
         {
             let payment = mint_sui(reward, &mut scenario);
             let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
-            let desc_hash = b"task-hash".to_string().into_bytes();
+            let desc_hash = valid_hash();
 
             marketplace::create_task(
                 &mut marketplace,
@@ -362,5 +366,35 @@ module tasksui::marketplace_tests {
             task_types::status_running(),
             task_types::status_released()
         ), 0);
+    }
+
+    #[test, expected_failure(abort_code = 13)]
+    fun test_create_task_rejects_short_description_hash() {
+        let creator = @0xC;
+        let reward = 5_000_000_000;
+
+        let mut scenario = test_scenario::begin(creator);
+
+        {
+            marketplace::init_for_testing(ctx(&mut scenario));
+        };
+        next_tx(&mut scenario, creator);
+
+        {
+            let payment = mint_sui(reward, &mut scenario);
+            let mut marketplace = test_scenario::take_shared<Marketplace>(&scenario);
+
+            marketplace::create_task(
+                &mut marketplace,
+                b"short-hash".to_string().into_bytes(),
+                1,
+                reward,
+                payment,
+                ctx(&mut scenario),
+            );
+            test_scenario::return_shared(marketplace);
+        };
+
+        test_scenario::end(scenario);
     }
 }
