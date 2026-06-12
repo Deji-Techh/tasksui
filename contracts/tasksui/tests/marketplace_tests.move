@@ -176,9 +176,9 @@ module tasksui::marketplace_tests {
         {
             let mut task = test_scenario::take_shared<Task>(&scenario);
             let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
-            let proof = b"proof-hash-abc123".to_string().into_bytes();
+            let proof = b"12345678901234567890123456789012".to_string().into_bytes();
 
-            marketplace::submit_completion(&mut task, &agent, proof);
+            marketplace::submit_completion(&mut task, &agent, proof, ctx(&mut scenario));
             assert!(marketplace::get_status(&task) == task_types::status_submitted(), 0);
 
             test_scenario::return_shared(task);
@@ -306,8 +306,8 @@ module tasksui::marketplace_tests {
         {
             let mut task = test_scenario::take_shared<Task>(&scenario);
             let mut agent = test_scenario::take_shared<AgentProfile>(&scenario);
-            let proof = b"bad-proof".to_string().into_bytes();
-            marketplace::submit_completion(&mut task, &agent, proof);
+            let proof = b"12345678901234567890123456789012".to_string().into_bytes();
+            marketplace::submit_completion(&mut task, &agent, proof, ctx(&mut scenario));
             test_scenario::return_shared(task);
             test_scenario::return_shared(agent);
         };

@@ -38,7 +38,7 @@ export function createTaskTx(
     target: `${PACKAGE_ID}::${MODULE}::create_task`,
     arguments: [
       tx.object(MARKETPLACE_ID),
-      tx.pure(descriptionHash),
+      tx.pure.vector("u8", descriptionHash),
       tx.pure.u8(category),
       tx.pure.u64(rewardMist),
       coin,
@@ -73,7 +73,7 @@ export function submitCompletionTx(
     arguments: [
       tx.object(taskId),
       tx.object(agentProfileId),
-      tx.pure(proofHash),
+      tx.pure.vector("u8", proofHash),
     ],
   })
   return tx
@@ -118,7 +118,7 @@ export function assignAndSubmitTx(
     arguments: [
       tx.object(taskId),
       tx.object(agentProfileId),
-      tx.pure(proofHash),
+      tx.pure.vector("u8", proofHash),
     ],
   })
   return tx

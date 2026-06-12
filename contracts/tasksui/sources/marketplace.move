@@ -255,13 +255,18 @@ module tasksui::marketplace {
         task: &mut Task,
         agent: &AgentProfile,
         proof_hash: vector<u8>,
+        ctx: &TxContext,
     ) {
+        assert!(
+            tx_context::sender(ctx) == task.creator || tx_context::sender(ctx) == agent.owner,
+            tasksui::task_types::e_not_authorized()
+        );
         assert!(
             object::id(agent).to_address() == task.agent_id,
             tasksui::task_types::e_not_authorized()
         );
         assert!(
-            vector::length(&proof_hash) > 0,
+            vector::length(&proof_hash) == 32,
             tasksui::task_types::e_invalid_proof()
         );
         assert!(

@@ -8,11 +8,12 @@ import type { AgentCategory } from "@/lib/constants"
 async function requireTxVerification(
   txDigest: string | undefined,
   expectedSender: string | undefined,
+  expected?: Parameters<typeof verifySuiTx>[2],
 ): Promise<{ ok: boolean; error?: string }> {
   if (!txDigest) {
     return { ok: false, error: "Missing txDigest" }
   }
-  const verified = await verifySuiTx(txDigest, expectedSender)
+  const verified = await verifySuiTx(txDigest, expectedSender, expected)
   if (!verified.ok) {
     return { ok: false, error: `Transaction verification failed: ${verified.error}` }
   }
@@ -97,9 +98,20 @@ export async function PATCH(
           )
         }
 
-        const agent = await prisma.agent.findFirst({
-          where: { category: task.agentCategory },
+        const existingResult = await prisma.taskResult.findUnique({
+          where: { taskId: id },
         })
+        if (task.status === "RUNNING" && existingResult?.resultHash) {
+          const updated = await prisma.task.findUnique({
+            where: { id },
+            include: { agent: true, result: true },
+          })
+          return NextResponse.json(updated)
+        }
+
+        const agent = task.agentId
+          ? await prisma.agent.findUnique({ where: { id: task.agentId } })
+          : await prisma.agent.findFirst({ where: { category: task.agentCategory } })
         if (!agent) {
           return NextResponse.json(
             { error: "No agent available for this category" },
@@ -124,14 +136,26 @@ export async function PATCH(
           const firstLine = fullOutput.split("\n").find((l) => l.trim().length > 0) ?? ""
           const summary = firstLine.slice(0, 200)
 
-          await prisma.taskResult.create({
-            data: {
+          await prisma.taskResult.upsert({
+            where: { taskId: id },
+            update: {
+              agentId: agent.id,
+              fullOutput,
+              summary,
+              resultHash,
+            },
+            create: {
               taskId: id,
               agentId: agent.id,
               fullOutput,
               summary,
               resultHash,
             },
+          })
+
+          await prisma.task.update({
+            where: { id },
+            data: { outputText: fullOutput, proofHash: resultHash },
           })
 
           const updated = await prisma.task.findUnique({
@@ -174,14 +198,31 @@ export async function PATCH(
 
         const score = mapVerdictToScore(judgeResult.verdict)
 
-        await prisma.judgeReport.create({
-          data: {
+        await prisma.judgeReport.upsert({
+          where: { taskId: id },
+          update: {
+            verdict: judgeResult.verdict,
+            score,
+            reason: judgeResult.notes,
+            recommendation: judgeResult.recommendation,
+            reportHash,
+          },
+          create: {
             taskId: id,
             verdict: judgeResult.verdict,
             score,
             reason: judgeResult.notes,
             recommendation: judgeResult.recommendation,
             reportHash,
+          },
+        })
+
+        await prisma.task.update({
+          where: { id },
+          data: {
+            judgeVerdict: judgeResult.verdict,
+            judgeRecommendation: judgeResult.recommendation,
+            judgeNotes: judgeResult.notes,
           },
         })
 
@@ -196,7 +237,10 @@ export async function PATCH(
       // ── confirm_submission: verify on-chain tx, then set SUBMITTED ──
       case "confirm_submission": {
         const { txDigest } = body
-        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined)
+        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
+          action: "confirm_submission",
+          suiTaskId: task.suiTaskId ?? undefined,
+        })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
         const [, updated] = await Promise.all([
@@ -218,7 +262,10 @@ export async function PATCH(
       // ── confirm_judge: verify on-chain tx, then set JUDGE_REVIEWED ──
       case "confirm_judge": {
         const { txDigest } = body
-        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined)
+        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
+          action: "confirm_judge",
+          suiTaskId: task.suiTaskId ?? undefined,
+        })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
         const [, updated] = await Promise.all([
@@ -243,7 +290,10 @@ export async function PATCH(
         if (!suiTaskId) {
           return NextResponse.json({ error: "Missing Sui task object ID" }, { status: 400 })
         }
-        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined)
+        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
+          action: "confirm_chain",
+          suiTaskId,
+        })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
         const updated = await prisma.task.update({
@@ -266,7 +316,10 @@ export async function PATCH(
           )
         }
         const { txDigest } = body
-        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined)
+        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
+          action: "release",
+          suiTaskId: task.suiTaskId ?? undefined,
+        })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
         const agentUpdate =
@@ -306,7 +359,10 @@ export async function PATCH(
           )
         }
         const { txDigest } = body
-        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined)
+        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
+          action: "dispute",
+          suiTaskId: task.suiTaskId ?? undefined,
+        })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
         const agentUpdate =
@@ -350,7 +406,10 @@ export async function PATCH(
           )
         }
         const { txDigest } = body
-        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined)
+        const v = await requireTxVerification(txDigest, task.creatorAddress ?? undefined, {
+          action: "cancel",
+          suiTaskId: task.suiTaskId ?? undefined,
+        })
         if (!v.ok) return NextResponse.json({ error: v.error }, { status: 400 })
 
         const updated = await prisma.task.update({

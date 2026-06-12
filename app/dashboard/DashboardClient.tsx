@@ -32,18 +32,35 @@ export default function DashboardClient() {
   const [activeTab, setActiveTab] = useState("created")
 
   useEffect(() => {
-    const url = isConnected && address
-      ? `/api/tasks?creatorAddress=${address}`
-      : "/api/tasks"
+    let cancelled = false
+
+    if (!isConnected || !address) {
+      setTasks([])
+      setFetchError(null)
+      setLoading(false)
+      return
+    }
+
+    setLoading(true)
     setFetchError(null)
-    fetch(url)
+    fetch(`/api/tasks?creatorAddress=${address}`)
       .then((r) => {
         if (!r.ok) throw new Error(`Server error (${r.status})`)
         return r.json()
       })
-      .then(setTasks)
-      .catch((err) => setFetchError(err instanceof Error ? err.message : "Failed to load tasks"))
-      .finally(() => setLoading(false))
+      .then((data) => {
+        if (!cancelled) setTasks(data)
+      })
+      .catch((err) => {
+        if (!cancelled) setFetchError(err instanceof Error ? err.message : "Failed to load tasks")
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
   }, [isConnected, address])
 
   const activeStatuses: string[] = TABS.find((t) => t.key === activeTab)?.statuses ?? []
@@ -64,7 +81,7 @@ export default function DashboardClient() {
           >
             <div>
               <span className="ts-kicker">Dashboard</span>
-              <h2>{isConnected ? "Your tasks." : "All tasks."}</h2>
+              <h2>{isConnected ? "Your tasks." : "Connect your wallet."}</h2>
               <p>
                 {isConnected
                   ? "Track your submitted tasks, agent progress, and escrow status."
@@ -87,6 +104,7 @@ export default function DashboardClient() {
               const count = tasks.filter((t) => tab.statuses.includes(t.status)).length
               return (
                 <button
+                  type="button"
                   key={tab.key}
                   onClick={() => setActiveTab(tab.key)}
                   style={{
@@ -121,6 +139,23 @@ export default function DashboardClient() {
           {loading ? (
             <div style={{ textAlign: "center", padding: "60px 20px" }}>
               <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
+            </div>
+          ) : !isConnected ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "80px 20px",
+                border: "1px solid var(--card-border)",
+                borderRadius: "var(--radius-xl)",
+                background: "var(--card)",
+              }}
+            >
+              <h3 style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 500 }}>
+                Wallet required
+              </h3>
+              <p style={{ margin: "0 auto", maxWidth: 400 }}>
+                Connect your Sui wallet to load tasks owned by your address.
+              </p>
             </div>
           ) : fetchError ? (
             <div style={{

@@ -129,8 +129,27 @@ const SUI_FEATURES = [
   "Verifiable",
 ]
 
+type RecentTask = {
+  id: string
+  title: string
+  rewardMist: string
+  agent?: { name: string } | null
+}
+
+type LandingStats = {
+  taskCount: number
+  agentCount: number
+  completedCount: number
+  recentVerified: RecentTask[]
+}
+
 export default function LandingPage() {
-  const [stats, setStats] = useState({ taskCount: 0, agentCount: 3, completedCount: 0, recentVerified: [] as any[] })
+  const [stats, setStats] = useState<LandingStats>({
+    taskCount: 0,
+    agentCount: 3,
+    completedCount: 0,
+    recentVerified: [],
+  })
 
   useEffect(() => {
     fetch("/api/stats")
@@ -319,7 +338,7 @@ function TerminalPreview({
       <div className="ts-terminal__chrome">
         <span /><span /><span />
         <small>{slug}</small>
-        <button aria-label="Copy"><Copy size={14} /></button>
+        <button type="button" aria-label="Copy"><Copy size={14} /></button>
       </div>
       <div className="ts-console__body" aria-live="polite">
         <div className="ts-console__command">
@@ -510,7 +529,7 @@ function SuiFeaturesSection() {
   )
 }
 
-function RecentVerifiedSection({ tasks }: { tasks: any[] }) {
+function RecentVerifiedSection({ tasks }: { tasks: RecentTask[] }) {
   if (!tasks || tasks.length === 0) return null
 
   return (
@@ -522,7 +541,7 @@ function RecentVerifiedSection({ tasks }: { tasks: any[] }) {
       </div>
 
       <div style={{ display: "grid", gap: 8, maxWidth: 720, margin: "0 auto" }}>
-        {tasks.map((task: any) => (
+        {tasks.map((task) => (
           <Link
             key={task.id}
             href={`/tasks/${task.id}`}

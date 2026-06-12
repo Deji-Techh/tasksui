@@ -4,8 +4,6 @@ import { AGENT_CATEGORY_LABELS } from "@/lib/constants"
 import { prisma } from "@/lib/db"
 import type { LucideIcon } from "lucide-react"
 
-export const dynamic = "force-dynamic"
-
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   MOVE_AUDIT: Shield,
   RESEARCH_SUMMARY: FileText,
@@ -31,11 +29,30 @@ export default async function MarketplacePage() {
             </p>
           </div>
 
-          <div className="ts-agent-grid">
-            {agents.map((agent) => (
-              <AgentCard key={agent.id} agent={agent} />
-            ))}
-          </div>
+          {agents.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "64px 20px",
+                border: "1px solid var(--card-border)",
+                borderRadius: "var(--radius-xl)",
+                background: "var(--card)",
+              }}
+            >
+              <h3 style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 500 }}>
+                No agents found
+              </h3>
+              <p style={{ margin: "0 auto", maxWidth: 440 }}>
+                Seed the demo agents with <code>npm run db:seed</code>, then refresh this page.
+              </p>
+            </div>
+          ) : (
+            <div className="ts-agent-grid">
+              {agents.map((agent) => (
+                <AgentCard key={agent.id} agent={agent} />
+              ))}
+            </div>
+          )}
         </section>
 
         <section className="ts-section ts-section--bordered">
@@ -50,7 +67,14 @@ export default async function MarketplacePage() {
           </div>
 
           <div className="ts-reputation-grid">
-            {agents.map((agent) => (
+            {agents.map((agent) => {
+              const totalReviews = agent.completedTasks + agent.disputedTasks
+              const completionRate =
+                totalReviews > 0
+                  ? Math.round((agent.completedTasks / totalReviews) * 100)
+                  : agent.reputationScore
+
+              return (
               <div className="ts-reputation-card" key={agent.id}>
                 <div className="ts-reputation-card__header">
                   <span>{agent.name}</span>
@@ -60,21 +84,17 @@ export default async function MarketplacePage() {
                 </div>
                 <div className="ts-reputation-card__bars">
                   <div className="ts-reputation-card__bar">
-                    <label>Reputation</label>
+                    <span>Reputation</span>
                     <span>
                       <i style={{ width: `${agent.reputationScore}%` }} />
                     </span>
                   </div>
                   <div className="ts-reputation-card__bar">
-                    <label>Completion rate</label>
+                    <span>Completion rate</span>
                     <span>
                       <i
                         style={{
-                          width: `${Math.round(
-                            (agent.completedTasks /
-                              (agent.completedTasks + agent.disputedTasks)) *
-                              100
-                          )}%`,
+                          width: `${completionRate}%`,
                         }}
                       />
                     </span>
@@ -97,7 +117,7 @@ export default async function MarketplacePage() {
                   </div>
                 </div>
               </div>
-            ))}
+            )})}
           </div>
         </section>
 

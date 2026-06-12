@@ -1,13 +1,14 @@
 import { createOpenAI } from "@ai-sdk/openai"
 import { generateText } from "ai"
 import { AgentCategory } from "@/lib/constants"
+import { formatWalletAnalysisContext, getWalletAnalysisContext } from "@/lib/sui/walletAnalysis"
 
-const grok = createOpenAI({
-  baseURL: process.env["GROK_BASE_URL"] ?? "https://api.x.ai/v1",
-  apiKey: process.env["GROK_API_KEY"],
+const groq = createOpenAI({
+  baseURL: process.env["GROQ_BASE_URL"] ?? "https://api.groq.com/openai/v1",
+  apiKey: process.env["GROQ_API_KEY"],
 })
 
-const model = grok("grok-3")
+const model = groq(process.env["GROQ_MODEL"] ?? "llama-3.3-70b-versatile")
 
 const SYSTEM_PROMPTS: Record<AgentCategory, string> = {
   MOVE_AUDIT:
@@ -24,11 +25,26 @@ export async function runAgent(
   taskDescription: string
 ): Promise<string> {
   const system = SYSTEM_PROMPTS[agentCategory] ?? systemPrompt
+  let prompt = taskDescription
+
+  if (agentCategory === AgentCategory.WALLET_ANALYSIS) {
+    const context = await getWalletAnalysisContext(taskDescription)
+    prompt = context
+      ? `${formatWalletAnalysisContext(context)}
+
+User task:
+${taskDescription}
+
+Use the RPC data as the source of truth. If the sampled data is incomplete, say what is missing instead of inventing activity.`
+      : `${taskDescription}
+
+No valid Sui wallet address was found in the task input. Ask the user to provide a Sui address and avoid pretending wallet data was fetched.`
+  }
 
   const { text } = await generateText({
     model,
     system,
-    prompt: taskDescription,
+    prompt,
     temperature: 0.3,
   })
 

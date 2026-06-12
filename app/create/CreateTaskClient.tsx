@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
+import type { Resolver } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import { Check, Eye, FileText, Loader2, Shield, Wallet } from "lucide-react"
@@ -42,6 +43,14 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>
 
+type AgentOption = {
+  id: string
+  name: string
+  category: AgentCategory
+  reputationScore: number
+  completedTasks: number
+}
+
 function extractDigest(result: unknown): string {
   return (result as Record<string, unknown>).digest as string
     ?? ((result as Record<string, unknown>).Transaction as Record<string, unknown>)?.digest as string
@@ -57,6 +66,32 @@ function extractTaskObjectId(result: unknown): string | null {
   return (created?.objectId as string) ?? null
 }
 
+async function fetchCreatedTaskObjectId(digest: string): Promise<string | null> {
+  const network = process.env["NEXT_PUBLIC_SUI_NETWORK"] === "mainnet" ? "mainnet" : "testnet"
+  const rpcUrl =
+    network === "mainnet"
+      ? "https://fullnode.mainnet.sui.io:443"
+      : "https://fullnode.testnet.sui.io:443"
+
+  const response = await fetch(rpcUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      id: 1,
+      method: "sui_getTransactionBlock",
+      params: [
+        digest,
+        {
+          showObjectChanges: true,
+        },
+      ],
+    }),
+  })
+  const data = await response.json()
+  return extractTaskObjectId(data.result)
+}
+
 export default function CreateTaskClient() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -64,14 +99,14 @@ export default function CreateTaskClient() {
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const [agents, setAgents] = useState<any[]>([])
+  const [agents, setAgents] = useState<AgentOption[]>([])
   const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null)
 
   const preselectedCategory = searchParams.get("category") as AgentCategory | null
   const preselectedAgentId = searchParams.get("agentId")
 
   const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema) as any,
+    resolver: zodResolver(formSchema) as Resolver<FormValues>,
     defaultValues: {
       title: "",
       description: "",
@@ -127,14 +162,14 @@ export default function CreateTaskClient() {
 
       const { createTaskTx, hashDescription } = await import("@/lib/sui/transactions")
       const rewardMist = BigInt(Math.floor(values.rewardSui * 1_000_000_000))
-      const descHash = await hashDescription(values.description)
+      const descHash = await hashDescription(mergedDescription)
       const tx = createTaskTx(descHash, CATEGORY_MAP[values.agentCategory] ?? 2, rewardMist)
       const result = await signAndExecute(tx)
       if (!result) {
         throw new Error("Sui transaction was not signed or failed")
       }
       const txDigest = extractDigest(result)
-      const suiTaskId = extractTaskObjectId(result)
+      const suiTaskId = extractTaskObjectId(result) ?? await fetchCreatedTaskObjectId(txDigest)
       if (!suiTaskId) {
         throw new Error("Could not find created Sui task object — object extraction failed")
       }
@@ -312,9 +347,9 @@ export default function CreateTaskClient() {
 
                 {categoryAgents.length > 0 && (
                   <div>
-                    <label style={formLabelStyle}>Choose an agent</label>
+                    <div style={formLabelStyle}>Choose an agent</div>
                     <div style={{ display: "grid", gap: 8 }}>
-                      {categoryAgents.map((agent: any) => (
+                      {categoryAgents.map((agent) => (
                         <button
                           key={agent.id}
                           type="button"

@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
         rewardMist,
         creatorAddress,
         status: "PENDING_CHAIN",
-        agentId: agentId ?? null,
+        agent: agentId ? { connect: { id: agentId } } : undefined,
         inputText: inputText ?? null,
         inputHash,
       },

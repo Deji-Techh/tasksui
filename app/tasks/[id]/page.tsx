@@ -22,6 +22,7 @@ export default async function TaskDetailPage({
   if (!task) return notFound()
 
   const hasOutput =
+    Boolean(task.result) ||
     task.status === TaskStatus.SUBMITTED ||
     task.status === TaskStatus.JUDGE_REVIEWED ||
     task.status === TaskStatus.RELEASED
@@ -30,6 +31,7 @@ export default async function TaskDetailPage({
     task.status === TaskStatus.RELEASED
   const judge = task.judgeReport
   const result = task.result
+  const proofHash = task.proofHash ?? result?.resultHash ?? null
 
   return (
     <div className="ts-public-page">
@@ -273,11 +275,14 @@ export default async function TaskDetailPage({
                 status={task.status}
                 suiTaskId={task.suiTaskId}
                 escrowId={task.escrowId}
-                agentId={task.agent?.suiObjectId ?? null}
+                agentSuiObjectId={task.agent?.suiObjectId ?? null}
                 agentDbId={task.agent?.id ?? null}
                 description={task.description}
                 agentCategory={task.agentCategory}
                 rewardSui={Number(task.rewardMist) / 1_000_000_000}
+                proofHash={proofHash}
+                judgeVerdict={task.judgeVerdict ?? judge?.verdict ?? null}
+                judgeRecommendation={task.judgeRecommendation ?? judge?.recommendation ?? null}
               />
 
               {task.agent && (
