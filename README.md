@@ -2,341 +2,107 @@
 
 **Hire AI agents. Escrow on Sui. Verify the work.**
 
-TaskSui is a Sui-native marketplace where users hire autonomous AI agents for Move audits, research, and wallet analysis, with payments secured by escrow and agent reputation tracked on-chain.
+TaskSui is a Sui-native marketplace where users hire autonomous AI agents for Move audits, research summaries, and wallet analysis. Users fund tasks with SUI testnet escrow, agents submit hashed completion proofs, an optional AI judge reviews the output, and payment is released only after user approval.
 
 Built for the **Sui Agentic Web hackathon track**.
 
----
+## What It Does
 
-## Overview
+- Create AI-agent tasks and fund them with SUI testnet escrow.
+- Run one of three seeded agents:
+  - **Move Auditor Agent** for Sui Move review.
+  - **Research Agent** for technical summaries.
+  - **Wallet Analysis Agent** for Sui wallet balance, object, transaction, and risk analysis.
+- Submit completion proofs on-chain as SHA-256 hashes.
+- Request an AI judge recommendation.
+- Approve/release escrow, dispute, or cancel eligible tasks.
+- Track on-chain agent profiles, task state, reputation, and earned rewards.
 
-Autonomous AI agents are becoming capable of doing useful digital work, but users still need a reliable way to trust, verify, and pay them.
+## Demo Flow
 
-TaskSui solves this by combining:
+1. Open the app and connect a Sui testnet wallet.
+2. Go to **Marketplace** and choose an agent.
+3. Create a task and fund escrow.
+4. Open the task detail page and click **Run Agent**.
+5. Sign the proof submission transaction.
+6. Optionally click **Ask AI Judge** and sign the judge transaction.
+7. Approve and release escrow, or reject/dispute.
 
-- Autonomous AI task execution
-- Sui-based escrow payments
-- Completion proofs
-- Optional AI judge review
-- On-chain agent reputation
-
-Users create tasks, lock SUI in escrow, run an AI agent, review the result, optionally ask an AI judge, and release payment only after work is accepted.
-
----
-
-## Problem
-
-AI agents can generate audits, research summaries, and blockchain insights, but there is still no standard trust layer for:
-
-- Paying agents safely
-- Verifying that work was completed
-- Reviewing work quality
-- Building portable agent reputation
-- Linking AI work to transparent on-chain records
-
-Without escrow and proof, users are forced to trust black-box agents or off-chain platforms.
-
----
-
-## Solution
-
-TaskSui introduces a Sui-native agent marketplace where:
-
-1. A user creates a task.
-2. The user funds escrow with testnet SUI.
-3. An autonomous AI agent completes the task.
-4. A result hash is stored as completion proof.
-5. The user can request AI judge review.
-6. The user approves and releases escrow.
-7. The agent earns reputation on-chain.
-
-The goal is to make autonomous agent work more verifiable, accountable, and composable.
-
----
-
-## Core Features
-
-### AI Agent Marketplace
-
-Browse and hire task-specific autonomous agents.
-
-MVP agents:
-
-- **Move Auditor Agent** — reviews Sui Move code for risks, logic errors, and security issues.
-- **Research Agent** — summarizes Sui docs, protocols, technical text, or project information.
-- **Wallet Analysis Agent** — analyzes Sui wallet activity, balances, object movement, and risk signals.
-
-### Sui Escrow
-
-Users fund each task with testnet SUI. The payment remains locked until the user approves the submitted work.
-
-### Completion Proofs
-
-Agent outputs are stored off-chain, while hashes and short summaries are stored on-chain as verifiable completion proofs.
-
-### AI Judge Review
-
-Users can request an AI judge to compare the original task with the submitted result and recommend approval or dispute.
-
-The AI judge is advisory only. It does not automatically release funds.
-
-### On-chain Reputation
-
-Agents build reputation through completed tasks, disputed tasks, and total earned rewards.
-
----
-
-## How It Works
+Good Research Agent test input:
 
 ```text
-Create Task
-   ↓
-Fund Sui Escrow
-   ↓
-Run AI Agent
-   ↓
-Submit Completion Proof
-   ↓
-Optional AI Judge Review
-   ↓
-Approve & Release Escrow
-   ↓
-Update Agent Reputation
+Summarize Sui's object-centric data model and explain why it matters for building agent marketplaces. Focus on owned objects, shared objects, transaction parallelism, escrow use cases, and how on-chain reputation can be represented with objects. Include key benefits, risks, and recommended design patterns for a hackathon MVP.
 ```
 
----
+Good Wallet Analysis input:
 
-## Task Lifecycle
+```text
+Analyze this Sui wallet for balances, owned objects, recent transaction behavior, package interactions, risk signals, and a behavior label:
+0xYOUR_TESTNET_WALLET_ADDRESS
+```
 
-| Status | Meaning |
+## Current Sui Testnet Deployment
+
+| Object | ID |
 |---|---|
-| `PENDING_CHAIN` | Task created off-chain but not yet funded on Sui |
-| `FUNDED` | Task exists on-chain and escrow contains SUI |
-| `RUNNING` | AI agent is processing the task |
-| `SUBMITTED` | Agent submitted a result |
-| `JUDGE_REVIEWED` | AI judge submitted a review |
-| `RELEASED` | Escrow was released to the agent |
-| `DISPUTED` | User rejected or disputed the result |
-| `CANCELLED` | Task was cancelled before completion |
-
----
-
-## Agent Types
-
-### Move Auditor Agent
-
-Analyzes Move modules for:
-
-- Missing signer checks
-- Unsafe public functions
-- Incorrect task status transitions
-- Escrow release bugs
-- Missing object validation
-- Duplicate release or claim risks
-
-### Research Agent
-
-Summarizes technical content into:
-
-- Clear overview
-- Key points
-- Builder use cases
-- Risks or limitations
-- Recommended next steps
-
-### Wallet Analysis Agent
-
-Analyzes a Sui wallet using:
-
-- SUI balance
-- Coin balances
-- Owned objects
-- Recent transactions
-- Package interactions
-- Risk signals
-- Behavior labels
-
-Example labels:
-
-- Collector
-- DeFi user
-- Deployer
-- Inactive
-- Suspicious
-- Unknown
-
----
-
-## Planned Architecture
-
-```text
-Frontend
-  Next.js + TypeScript + Tailwind + shadcn/ui
-
-Backend
-  Next.js API routes + Prisma + Supabase Postgres
-
-AI Layer
-  Vercel AI SDK + DeepSeek API
-
-Sui Layer
-  Sui Move contracts + @mysten/sui + @mysten/dapp-kit-react
-
-Storage Model
-  Sui: escrow, proof hashes, task status, reputation
-  Database: full task text, full AI output, judge report, wallet cache
-```
-
----
+| Package | `0xf8b3842e6d4c4f1a3c630ee1fbc0fd3289ff60f8d2240a3ddcd0e4ad551f0cce` |
+| Marketplace | `0xdf631330206d396eb54ca913adc0846c098bbef655d9d46553609c191dd571b4` |
+| Move Auditor Agent | `0x6cabcf7623456aa8d8876717ca034f896af8a93bffbc3fd7443912231c1a8009` |
+| Research Agent | `0xdc7084e6e59e87dbd05e663ba9ec3a7769c16aa71f5bfbeaa0726b87a5e3b9c9` |
+| Wallet Analysis Agent | `0x2d9bc4052c21910d9230034479087ebd37b14817e84cf7de33f9a15f15ed06ca` |
 
 ## Tech Stack
 
 | Layer | Stack |
 |---|---|
-| Framework | Next.js App Router |
-| Language | TypeScript |
-| Styling | Tailwind CSS |
-| UI | shadcn/ui, Radix UI, lucide-react |
-| Theme | next-themes |
-| Animation | Framer Motion |
-| Forms | React Hook Form + Zod |
-| Server State | TanStack Query |
-| Sui SDK | `@mysten/sui`, `@mysten/dapp-kit-react` |
-| Smart Contracts | Sui Move |
-| Database | Supabase Postgres |
-| ORM | Prisma |
-| AI | Vercel AI SDK + DeepSeek API |
-| Deployment | Vercel + Supabase + Sui testnet |
+| App | Next.js App Router, React, TypeScript |
+| Styling | Tailwind CSS, shadcn-style components, lucide-react |
+| Wallet/Sui frontend | `@mysten/dapp-kit-react`, `@mysten/sui` |
+| Contract | Sui Move |
+| Backend | Next.js API routes |
+| Database | Prisma with local SQLite/libSQL adapter |
+| AI | Vercel AI SDK with Groq OpenAI-compatible API |
+| Network | Sui testnet |
 
----
+## Local Setup
 
-## Planned Folder Structure
-
-```text
-tasksui/
-  app/
-    page.tsx
-    marketplace/
-    create/
-    tasks/[id]/
-    agents/[id]/
-    dashboard/
-    api/
-      tasks/
-      agents/
-      judge/
-
-  components/
-    ui/
-    layout/
-    agents/
-    tasks/
-    escrow/
-    proofs/
-    theme/
-
-  lib/
-    ai/
-    sui/
-    db/
-    validations/
-    constants.ts
-    utils.ts
-
-  prisma/
-    schema.prisma
-    seed.ts
-
-  contracts/
-    tasksui/
-      Move.toml
-      sources/
-        marketplace.move
-      tests/
-```
-
----
-
-## Smart Contract Objects
-
-Planned Sui Move objects:
-
-- `AgentProfile`
-- `Task`
-- `Escrow`
-- `CompletionProof`
-- `JudgeReport`
-
-Core contract functions:
-
-- `register_agent`
-- `create_task_with_escrow`
-- `submit_completion`
-- `submit_judge_report`
-- `approve_and_release`
-- `cancel_before_submission`
-- `mark_disputed`
-
----
-
-## API Routes
-
-Planned API routes:
-
-| Route | Purpose |
-|---|---|
-| `POST /api/tasks/create` | Save task metadata and return input hash |
-| `POST /api/tasks/confirm-chain` | Attach Sui task ID, escrow ID, and transaction digest |
-| `GET /api/tasks/:id` | Fetch task detail |
-| `GET /api/agents` | Fetch agent marketplace |
-| `GET /api/agents/:id` | Fetch one agent |
-| `POST /api/agents/run` | Run the correct AI agent |
-| `POST /api/tasks/submit-completion-confirm` | Confirm completion proof on-chain |
-| `POST /api/judge/run` | Run AI judge |
-| `POST /api/judge/confirm-chain` | Confirm judge report on-chain |
-| `POST /api/tasks/release-confirm` | Confirm escrow release |
-| `POST /api/tasks/cancel-confirm` | Confirm cancellation/refund |
-
----
-
-## Local Development
-
-### 1. Clone the repository
+### 1. Install dependencies
 
 ```bash
-git clone https://github.com/Deji-Tech/tasksui.git
-cd tasksui
+npm install
 ```
 
-### 2. Install dependencies
-
-```bash
-pnpm install
-```
-
-### 3. Configure environment variables
-
-Create a `.env.local` file:
+### 2. Configure environment
 
 ```bash
 cp .env.example .env.local
 ```
 
-Expected variables:
+Set these values:
 
 ```env
-DATABASE_URL=""
-DIRECT_URL=""
-DEEPSEEK_API_KEY=""
+DATABASE_URL="file:./dev.db"
+GROQ_API_KEY="your_groq_key"
+GROQ_BASE_URL="https://api.groq.com/openai/v1"
+GROQ_MODEL="llama-3.3-70b-versatile"
 NEXT_PUBLIC_SUI_NETWORK="testnet"
-NEXT_PUBLIC_TASKSUI_PACKAGE_ID=""
+NEXT_PUBLIC_TASKSUI_PACKAGE_ID="0xf8b3842e6d4c4f1a3c630ee1fbc0fd3289ff60f8d2240a3ddcd0e4ad551f0cce"
+NEXT_PUBLIC_TASKSUI_MARKETPLACE_ID="0xdf631330206d396eb54ca913adc0846c098bbef655d9d46553609c191dd571b4"
 NEXT_PUBLIC_TASKSUI_TREASURY_OR_ADMIN=""
 ```
 
-### 4. Run the development server
+### 3. Prepare the database
 
 ```bash
-pnpm dev
+npm run db:generate
+npm run db:push
+npm run db:seed
+```
+
+### 4. Start the app
+
+```bash
+npm run dev
 ```
 
 Open:
@@ -345,127 +111,111 @@ Open:
 http://localhost:3000
 ```
 
----
+## Scripts
 
-## Development Roadmap
-
-### Phase 1 — Frontend Mock MVP
-
-- [x] Create landing page (hero + CTA) — FundTracer dark-first design, animated terminals, workflow
-- [x] Build marketplace page — agent cards, reputation comparison, FundTracer design
-- [x] Build create task page
-- [x] Build task detail page
-- [x] Add lifecycle/status UI
-- [x] Add mock agent outputs — terminal preview boards with live step/entity/finding animations
-- [x] Add mock AI judge flow — task input/output/proof/judge code showcase
-- [x] Add light/dark mode — CSS custom property tokens, pill toggle in navbar
-
-### Phase 2 — Database + API
-
-- [x] Add Prisma schema (SQLite via libsql adapter)
-- [ ] Add Supabase Postgres (dev uses SQLite)
-- [x] Seed demo agents
-- [x] Add task creation API
-- [x] Add agent run API (Grok via Vercel AI SDK)
-- [x] Add judge run API
-- [x] Add transaction confirmation APIs (confirm-chain, release, cancel)
-
-### Phase 3 — Sui Contracts
-
-- [x] Create Move package
-- [x] Implement agent profiles
-- [x] Implement task object
-- [x] Implement escrow object
-- [x] Implement completion proof
-- [x] Implement judge report
-- [x] Add Move tests
-- [ ] Publish to Sui testnet
-
-### Phase 4 — Full Integration
-
-- [ ] Connect Sui wallet
-- [ ] Create and fund escrow task
-- [ ] Submit completion proof on-chain
-- [ ] Submit judge report on-chain
-- [ ] Approve and release escrow
-- [ ] Update reputation
-- [ ] Add Sui Explorer links
-
-### Phase 5 — Hackathon Polish
-
-- [ ] Add demo data
-- [ ] Add screenshots
-- [ ] Add demo video link
-- [ ] Add deployed app link
-- [ ] Add final project description
-- [ ] Prepare pitch script
-
----
-
-## Demo Flow
-
-Primary demo: **Wallet Analysis Agent**
-
-1. User opens TaskSui.
-2. User connects Sui wallet.
-3. User selects Wallet Analysis Agent.
-4. User creates a wallet analysis task.
-5. User funds escrow with testnet SUI.
-6. Agent analyzes the wallet.
-7. Agent submits completion proof.
-8. User requests AI judge review.
-9. Judge recommends approval.
-10. User approves and releases escrow.
-11. Agent reputation updates.
-
-Secondary demo: **Move Auditor Agent**
-
-1. User creates a Move audit task.
-2. User pastes Move code.
-3. Agent identifies risks.
-4. User approves and releases payment.
-
----
-
-## Why This Fits the Agentic Web Track
-
-TaskSui is not just a chatbot UI. It gives agents a marketplace workflow where they can:
-
-- Receive tasks
-- Execute domain-specific work
-- Submit verifiable completion proofs
-- Be reviewed by an AI judge
-- Earn escrowed payment
-- Build on-chain reputation
-
-Sui is central because it provides:
-
-- Object-based escrow
-- Verifiable task state
-- On-chain agent profiles
-- Completion proof records
-- Atomic payment and reputation updates
-- Composable reputation for future agent apps
-
----
-
-## Current Status
-
-This repository is in early hackathon planning/build stage.
-
-Initial target:
-
-```text
-Frontend-first MVP → API + AI agents → Sui Move escrow integration
+```bash
+npm run dev          # start local dev server
+npm run lint         # run ESLint
+npm run typecheck    # run TypeScript
+npm run build        # production build
+npm run move:test    # run Sui Move tests
+npm run db:seed      # seed demo agents
 ```
 
----
+Note: `npm run check` currently calls `pnpm` internally. If `pnpm` is not installed, run `npm run lint`, `npm run typecheck`, and `npm run build` separately.
+
+## Task Lifecycle
+
+| Status | Meaning |
+|---|---|
+| `PENDING_CHAIN` | Task exists in the database but has not been funded on-chain |
+| `FUNDED` | Sui task object exists and escrow is funded |
+| `RUNNING` | AI agent has been invoked |
+| `SUBMITTED` | Completion proof has been submitted on-chain |
+| `JUDGE_REVIEWED` | AI judge report has been submitted on-chain |
+| `RELEASED` | Escrow has been released to the agent |
+| `DISPUTED` | Creator rejected/disputed the result |
+| `CANCELLED` | Funded task was cancelled before submission |
+
+## API Surface
+
+| Route | Purpose |
+|---|---|
+| `GET /api/agents` | List seeded agents |
+| `GET /api/agents/:id` | Fetch one agent |
+| `GET /api/tasks?creatorAddress=...` | List tasks for a wallet |
+| `POST /api/tasks` | Create a pending task |
+| `GET /api/tasks/:id` | Fetch task detail |
+| `PATCH /api/tasks/:id` | Run lifecycle actions |
+| `GET /api/stats` | Landing-page stats |
+
+`PATCH /api/tasks/:id` supports:
+
+- `confirm_chain`
+- `run_agent`
+- `confirm_submission`
+- `run_judge`
+- `confirm_judge`
+- `release`
+- `dispute`
+- `cancel`
+- `discard`
+
+Protected actions require the task creator address and verify expected Sui transaction calls/events before changing lifecycle state.
+
+## Move Contract
+
+The Sui Move package implements:
+
+- `Marketplace`
+- `AgentProfile`
+- `Task`
+- escrow balance storage
+- task assignment
+- completion proof submission
+- judge review submission
+- escrow release
+- dispute/refund
+- cancellation
+- reputation updates
+
+Security checks include:
+
+- creator-only assignment, judge, release, cancel, and dispute actions
+- task/agent category matching
+- correct agent object validation
+- exact 32-byte `description_hash`
+- exact 32-byte `proof_hash`
+- bounded judge verdict/recommendation values
+
+Run tests:
+
+```bash
+npm run move:test
+```
+
+## Known Demo Notes
+
+- Use a Sui testnet wallet with gas.
+- Phantom may show conservative warnings for custom Sui Move calls on localhost even when the transaction is valid. Sui Wallet or Slush generally gives a cleaner demo flow.
+- The app uses local SQLite/libSQL for the hackathon demo. For production, migrate the Prisma datasource to hosted Postgres and configure deployment secrets.
+- The AI judge is advisory only; the user still controls escrow release.
+
+## Submission Status
+
+Current state:
+
+- Frontend screens complete.
+- Sui testnet contract published.
+- Three on-chain agent profiles registered.
+- Create/fund/run/proof/judge/release flow wired.
+- Wallet analysis fetches real Sui RPC data.
+- Move tests pass.
+- Next.js lint/typecheck/build pass.
 
 ## License
 
-This project is licensed under the MIT License. See [`LICENSE`](./LICENSE) for details.
-
----
+MIT. See [`LICENSE`](./LICENSE).
 
 ## Author
 
