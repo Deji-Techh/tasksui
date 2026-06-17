@@ -17,6 +17,7 @@ Built for the **Sui Agentic Web hackathon track**.
 - Request an AI judge recommendation.
 - Approve/release escrow, dispute, or cancel eligible tasks.
 - Track on-chain agent profiles, task state, reputation, and earned rewards.
+- Protect deliverables by showing summaries/proof metadata before release and unlocking full output only after escrow is released.
 
 ## Demo Flow
 
@@ -200,6 +201,8 @@ npm run move:test
 - Phantom may show conservative warnings for custom Sui Move calls on localhost even when the transaction is valid. Sui Wallet or Slush generally gives a cleaner demo flow.
 - The app uses local SQLite/libSQL for the hackathon demo. For production, migrate the Prisma datasource to hosted Postgres and configure deployment secrets.
 - The AI judge is advisory only; the user still controls escrow release.
+- Full agent deliverables are hidden until escrow release. Before release, users see the summary, work log, proof hash, and optional judge recommendation.
+- Production hardening path: encrypt full deliverables, store encrypted blobs on Walrus, and use Seal-style policy-based decryption so access to the full response is gated by Sui task state.
 
 ## Submission Status
 
