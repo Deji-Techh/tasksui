@@ -17,6 +17,9 @@
 /.next/
 /out/
 
+# Sui Move generated build artifacts
+/contracts/tasksui/build/
+
 # production
 /build
 
