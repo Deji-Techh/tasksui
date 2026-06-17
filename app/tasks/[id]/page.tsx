@@ -32,6 +32,7 @@ export default async function TaskDetailPage({
   const judge = task.judgeReport
   const result = task.result
   const proofHash = task.proofHash ?? result?.resultHash ?? null
+  const fullOutputUnlocked = task.status === TaskStatus.RELEASED
 
   return (
     <div className="ts-public-page">
@@ -147,7 +148,9 @@ export default async function TaskDetailPage({
                     }}
                   >
                     <Bot size={16} style={{ color: "var(--accent)" }} />
-                    <h3 style={{ margin: 0 }}>Agent Output</h3>
+                    <h3 style={{ margin: 0 }}>
+                      {fullOutputUnlocked ? "Agent Output" : "Agent Work Summary"}
+                    </h3>
                     {result.createdAt && (
                       <span style={{
                         marginLeft: "auto",
@@ -158,9 +161,58 @@ export default async function TaskDetailPage({
                       </span>
                     )}
                   </div>
-                  <div className="ts-output-block">
-                    <pre>{result.fullOutput}</pre>
-                  </div>
+                  {fullOutputUnlocked ? (
+                    <div className="ts-output-block">
+                      <pre>{result.fullOutput}</pre>
+                    </div>
+                  ) : (
+                    <>
+                      <p
+                        style={{
+                          color: "var(--fg-secondary)",
+                          fontSize: "var(--text-md)",
+                          lineHeight: 1.6,
+                          marginBottom: 16,
+                        }}
+                      >
+                        {result.summary ||
+                          "The agent completed the work and produced a hashed deliverable. Full output unlocks after escrow release."}
+                      </p>
+                      <div
+                        style={{
+                          display: "grid",
+                          gap: 8,
+                          padding: "12px 16px",
+                          border: "1px solid var(--card-border)",
+                          borderRadius: "var(--radius-md)",
+                          background: "var(--bg-secondary)",
+                          color: "var(--fg-secondary)",
+                          fontSize: "var(--text-sm)",
+                        }}
+                      >
+                        <strong style={{ color: "var(--fg)" }}>Work log</strong>
+                        <span>Agent selected: {task.agent?.name ?? "Assigned agent"}</span>
+                        <span>Task category: {AGENT_CATEGORY_LABELS[
+                          task.agentCategory as keyof typeof AGENT_CATEGORY_LABELS
+                        ] ?? task.agentCategory}</span>
+                        <span>Deliverable hash generated and stored for verification.</span>
+                        {result.submitTxDigest ? (
+                          <span>Completion proof submitted on-chain.</span>
+                        ) : (
+                          <span>Completion proof is ready for on-chain submission.</span>
+                        )}
+                      </div>
+                      <p
+                        style={{
+                          marginTop: 12,
+                          color: "var(--fg-tertiary)",
+                          fontSize: "var(--text-xs)",
+                        }}
+                      >
+                        Full deliverable is hidden until escrow is released, preventing users from copying the work and then disputing payment.
+                      </p>
+                    </>
+                  )}
                   {result.resultHash && (
                     <div className="ts-proof-badge">
                       <Shield size={14} />
