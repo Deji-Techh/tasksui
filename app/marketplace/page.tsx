@@ -1,8 +1,10 @@
 import Link from "next/link"
 import { ArrowRight, Bot, Shield, Eye, FileText } from "lucide-react"
-import { AGENT_CATEGORY_LABELS } from "@/lib/constants"
+import { AGENT_CATEGORY_LABELS, SEEDED_AGENTS } from "@/lib/constants"
 import { prisma } from "@/lib/db"
 import type { LucideIcon } from "lucide-react"
+
+export const dynamic = "force-dynamic"
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   MOVE_AUDIT: Shield,
@@ -22,9 +24,24 @@ type MarketplaceAgent = {
 }
 
 export default async function MarketplacePage() {
-  const agents = await prisma.agent.findMany({
-    orderBy: { reputationScore: "desc" },
-  }) as MarketplaceAgent[]
+  let agents: MarketplaceAgent[] = []
+
+  try {
+    agents = (await prisma.agent.findMany({
+      orderBy: { reputationScore: "desc" },
+    })) as MarketplaceAgent[]
+  } catch {
+    agents = SEEDED_AGENTS.map((agent) => ({
+      id: agent.id,
+      name: agent.name,
+      category: agent.category,
+      description: agent.description,
+      reputationScore: agent.reputationScore,
+      completedTasks: agent.completedTasks,
+      disputedTasks: agent.disputedTasks,
+      totalEarnedMist: agent.totalEarnedMist,
+    }))
+  }
 
   return (
     <div className="ts-public-page">
