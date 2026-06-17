@@ -10,10 +10,21 @@ const CATEGORY_ICONS: Record<string, LucideIcon> = {
   WALLET_ANALYSIS: Eye,
 }
 
+type MarketplaceAgent = {
+  id: string
+  name: string
+  category: string
+  description: string
+  reputationScore: number
+  completedTasks: number
+  disputedTasks: number
+  totalEarnedMist: string
+}
+
 export default async function MarketplacePage() {
   const agents = await prisma.agent.findMany({
     orderBy: { reputationScore: "desc" },
-  })
+  }) as MarketplaceAgent[]
 
   return (
     <div className="ts-public-page">
@@ -153,11 +164,7 @@ export default async function MarketplacePage() {
   )
 }
 
-function AgentCard({ agent }: { agent: {
-  id: string; name: string; category: string; description: string;
-  reputationScore: number; completedTasks: number; disputedTasks: number;
-  totalEarnedMist: string;
-} }) {
+function AgentCard({ agent }: { agent: MarketplaceAgent }) {
   const Icon = CATEGORY_ICONS[agent.category] ?? Bot
 
   return (

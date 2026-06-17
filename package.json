@@ -7,12 +7,13 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "db:seed": "npx tsx prisma/seed.ts",
     "db:push": "npx prisma db push",
     "db:generate": "npx prisma generate",
     "typecheck": "tsc --noEmit",
     "move:test": "cd contracts/tasksui && sui move test",
-    "check": "pnpm lint && pnpm typecheck && pnpm build"
+    "check": "npm run lint && npm run typecheck && npm run build"
   },
   "dependencies": {
     "@ai-sdk/openai": "^3.0.69",

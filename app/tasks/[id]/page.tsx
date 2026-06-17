@@ -6,6 +6,7 @@ import { TaskStatus, AGENT_CATEGORY_LABELS } from "@/lib/constants"
 import { prisma } from "@/lib/db"
 import { explorerLink } from "@/lib/sui/client"
 import { TaskActions } from "@/components/tasks/TaskActions"
+import { UnlockDeliverable } from "@/components/tasks/UnlockDeliverable"
 import { notFound } from "next/navigation"
 
 export default async function TaskDetailPage({
@@ -162,9 +163,13 @@ export default async function TaskDetailPage({
                     )}
                   </div>
                   {fullOutputUnlocked ? (
-                    <div className="ts-output-block">
-                      <pre>{result.fullOutput}</pre>
-                    </div>
+                    result.fullOutput ? (
+                      <div className="ts-output-block">
+                        <pre>{result.fullOutput}</pre>
+                      </div>
+                    ) : (
+                      <UnlockDeliverable taskId={task.id} />
+                    )
                   ) : (
                     <>
                       <p

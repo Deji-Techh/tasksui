@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { prisma } from "@/lib/db"
 import { runAgent, runJudge } from "@/lib/ai"
+import { decryptDeliverable, encryptDeliverable } from "@/lib/deliverables"
 import { verifySuiTx } from "@/lib/sui/client"
 import type { AgentCategory } from "@/lib/constants"
 
@@ -48,9 +49,28 @@ function requireSuiTaskId(task: { suiTaskId: string | null }) {
 function redactDeliverable<T extends {
   status: string
   outputText?: string | null
-  result?: { fullOutput: string } | null
+  result?: {
+    fullOutput?: string | null
+    encryptedPayload?: string | null
+    encryptionIv?: string | null
+    encryptionTag?: string | null
+  } | null
 } | null>(task: T): T {
-  if (!task || task.status === "RELEASED") return task
+  if (!task) return task
+  if (task.status === "RELEASED") {
+    return {
+      ...task,
+      outputText: task.outputText && task.result?.fullOutput ? task.outputText : null,
+      result: task.result
+        ? {
+            ...task.result,
+            encryptedPayload: null,
+            encryptionIv: null,
+            encryptionTag: null,
+          }
+        : task.result,
+    }
+  }
   return {
     ...task,
     outputText: null,
@@ -59,6 +79,9 @@ function redactDeliverable<T extends {
           ...task.result,
           fullOutput:
             "Full deliverable is locked until escrow is released. Review the summary, proof hash, and AI judge recommendation before approving.",
+          encryptedPayload: null,
+          encryptionIv: null,
+          encryptionTag: null,
         }
       : task.result,
   }
@@ -163,31 +186,48 @@ export async function PATCH(
             task.description
           )
 
-          const resultHash = crypto.createHash("sha256").update(fullOutput).digest("hex")
-
-          const firstLine = fullOutput.split("\n").find((l) => l.trim().length > 0) ?? ""
-          const summary = firstLine.slice(0, 200)
+          const deliverable = await encryptDeliverable(task, fullOutput)
 
           await prisma.taskResult.upsert({
             where: { taskId: id },
             update: {
               agentId: agent.id,
-              fullOutput,
-              summary,
-              resultHash,
+              fullOutput: null,
+              summary: deliverable.summary,
+              resultHash: deliverable.resultHash,
+              encryptedPayload: deliverable.encryptedPayload,
+              encryptionIv: deliverable.encryptionIv,
+              encryptionTag: deliverable.encryptionTag,
+              encryptionAlg: deliverable.encryptionAlg,
+              storageProvider: deliverable.storageProvider,
+              walrusBlobId: deliverable.walrusBlobId,
+              walrusObjectId: deliverable.walrusObjectId,
+              walrusEndEpoch: deliverable.walrusEndEpoch,
+              sealPolicyId: deliverable.sealPolicyId,
+              encryptedSize: deliverable.encryptedSize,
             },
             create: {
               taskId: id,
               agentId: agent.id,
-              fullOutput,
-              summary,
-              resultHash,
+              fullOutput: null,
+              summary: deliverable.summary,
+              resultHash: deliverable.resultHash,
+              encryptedPayload: deliverable.encryptedPayload,
+              encryptionIv: deliverable.encryptionIv,
+              encryptionTag: deliverable.encryptionTag,
+              encryptionAlg: deliverable.encryptionAlg,
+              storageProvider: deliverable.storageProvider,
+              walrusBlobId: deliverable.walrusBlobId,
+              walrusObjectId: deliverable.walrusObjectId,
+              walrusEndEpoch: deliverable.walrusEndEpoch,
+              sealPolicyId: deliverable.sealPolicyId,
+              encryptedSize: deliverable.encryptedSize,
             },
           })
 
           await prisma.task.update({
             where: { id },
-            data: { outputText: fullOutput, proofHash: resultHash },
+            data: { outputText: null, proofHash: deliverable.resultHash },
           })
 
           const updated = await prisma.task.findUnique({
@@ -214,14 +254,15 @@ export async function PATCH(
       // ── run_judge: evaluate agent output, store in JudgeReport ──
       case "run_judge": {
         const result = await prisma.taskResult.findUnique({ where: { taskId: id } })
-        if (!result?.fullOutput) {
+        if (!result?.fullOutput && !result?.encryptedPayload && !result?.walrusBlobId) {
           return NextResponse.json(
             { error: "Task has no agent output to review" },
             { status: 400 }
           )
         }
 
-        const judgeResult = await runJudge(task.description, result.fullOutput)
+        const fullOutput = await decryptDeliverable(task, result)
+        const judgeResult = await runJudge(task.description, fullOutput)
 
         const reportHash = crypto
           .createHash("sha256")

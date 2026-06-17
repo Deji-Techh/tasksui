@@ -197,6 +197,8 @@ module tasksui::marketplace_tests {
 
             marketplace::approve_and_release(&mut task, &mut agent, ctx(&mut scenario));
             assert!(marketplace::get_status(&task) == task_types::status_released(), 0);
+            assert!(marketplace::can_decrypt_deliverable(&task, creator), 0);
+            assert!(!marketplace::can_decrypt_deliverable(&task, agent_addr), 0);
             assert!(marketplace::agent_completed_tasks(&agent) == 1, 0);
             assert!(marketplace::agent_total_earned(&agent) == reward, 0);
 

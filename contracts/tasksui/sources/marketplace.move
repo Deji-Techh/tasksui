@@ -392,6 +392,9 @@ module tasksui::marketplace {
     public fun get_creator(task: &Task): address { task.creator }
     public fun get_reward(task: &Task): u64 { task.reward }
     public fun get_agent_id(task: &Task): address { task.agent_id }
+    public fun can_decrypt_deliverable(task: &Task, requester: address): bool {
+        task.status == tasksui::task_types::status_released() && task.creator == requester
+    }
 
     public fun agent_completed_tasks(agent: &AgentProfile): u64 { agent.completed_tasks }
     public fun agent_disputed_tasks(agent: &AgentProfile): u64 { agent.disputed_tasks }

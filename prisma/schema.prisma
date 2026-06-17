@@ -60,9 +60,20 @@ model TaskResult {
   id                 String   @id @default(cuid())
   taskId             String   @unique
   agentId            String
-  fullOutput         String
+  fullOutput         String?
   summary            String?
   resultHash         String
+  encryptedPayload   String?
+  encryptionIv       String?
+  encryptionTag      String?
+  encryptionAlg      String   @default("AES-256-GCM")
+  storageProvider    String   @default("LOCAL_ENCRYPTED")
+  walrusBlobId       String?
+  walrusObjectId     String?
+  walrusEndEpoch     String?
+  sealPolicyId       String?
+  encryptedSize      Int?
+  judgeDraftJson     String?
   completionProofId  String?
   submitTxDigest     String?
   createdAt          DateTime @default(now())

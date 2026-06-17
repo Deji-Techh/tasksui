@@ -90,7 +90,15 @@ NEXT_PUBLIC_SUI_NETWORK="testnet"
 NEXT_PUBLIC_TASKSUI_PACKAGE_ID="0xf8b3842e6d4c4f1a3c630ee1fbc0fd3289ff60f8d2240a3ddcd0e4ad551f0cce"
 NEXT_PUBLIC_TASKSUI_MARKETPLACE_ID="0xdf631330206d396eb54ca913adc0846c098bbef655d9d46553609c191dd571b4"
 NEXT_PUBLIC_TASKSUI_TREASURY_OR_ADMIN=""
+TASKSUI_DELIVERABLE_KEY="32-byte-base64-or-64-character-hex-key"
+WALRUS_PUBLISHER_URL=""
+WALRUS_PUBLISHER_TOKEN=""
+WALRUS_AGGREGATOR_URL=""
+WALRUS_EPOCHS="5"
+SEAL_POLICY_PREFIX="tasksui-seal-policy"
 ```
+
+For a hosted Railway demo, use a persistent libSQL/Turso database URL for `DATABASE_URL` if you want data to survive redeploys. `file:./dev.db` is fine locally, but hosted filesystem storage may be reset during deploys.
 
 ### 3. Prepare the database
 
@@ -123,7 +131,14 @@ npm run move:test    # run Sui Move tests
 npm run db:seed      # seed demo agents
 ```
 
-Note: `npm run check` currently calls `pnpm` internally. If `pnpm` is not installed, run `npm run lint`, `npm run typecheck`, and `npm run build` separately.
+For a full local validation pass:
+
+```bash
+npm run check
+npm run move:test
+```
+
+Railway builds with `npm ci`, so keep `package.json` and `package-lock.json` in sync before pushing.
 
 ## Task Lifecycle
 
@@ -148,6 +163,7 @@ Note: `npm run check` currently calls `pnpm` internally. If `pnpm` is not instal
 | `POST /api/tasks` | Create a pending task |
 | `GET /api/tasks/:id` | Fetch task detail |
 | `PATCH /api/tasks/:id` | Run lifecycle actions |
+| `POST /api/tasks/:id/unlock` | Verify creator wallet signature and decrypt released deliverable |
 | `GET /api/stats` | Landing-page stats |
 
 `PATCH /api/tasks/:id` supports:
@@ -163,6 +179,19 @@ Note: `npm run check` currently calls `pnpm` internally. If `pnpm` is not instal
 - `discard`
 
 Protected actions require the task creator address and verify expected Sui transaction calls/events before changing lifecycle state.
+
+## Deliverable Protection
+
+New agent runs do not store plaintext output in the database. The backend hashes the plaintext, encrypts it with AES-256-GCM, stores only the summary/proof metadata for normal reads, and unlocks the full output only after escrow reaches `RELEASED`.
+
+Production configuration:
+
+- Set `TASKSUI_DELIVERABLE_KEY` in the deployment secret manager. Do not commit it.
+- Optional after submission: set `WALRUS_PUBLISHER_URL` and `WALRUS_AGGREGATOR_URL` to store encrypted payloads on Walrus. If unset, encrypted payloads stay encrypted in the database as the demo fallback.
+- Optional after submission: set `SEAL_POLICY_PREFIX` to align encrypted deliverables with the Seal policy identity used by a production Seal access-control integration.
+- Users unlock released deliverables by signing a readable wallet message; the API verifies the Sui personal-message signature and task ownership before decrypting.
+
+Current demo security model: encrypted-at-rest deliverables, wallet-signed unlock, and release-gated access checks. Production hardening path: move encrypted payload storage to Walrus and wire native Seal policy-based decryption so access is enforced by Sui task state and Seal policy instead of only by the app server.
 
 ## Move Contract
 
@@ -188,6 +217,7 @@ Security checks include:
 - exact 32-byte `description_hash`
 - exact 32-byte `proof_hash`
 - bounded judge verdict/recommendation values
+- `can_decrypt_deliverable(task, requester)` access helper for Seal-style release-gated decryption
 
 Run tests:
 
@@ -199,10 +229,23 @@ npm run move:test
 
 - Use a Sui testnet wallet with gas.
 - Phantom may show conservative warnings for custom Sui Move calls on localhost even when the transaction is valid. Sui Wallet or Slush generally gives a cleaner demo flow.
-- The app uses local SQLite/libSQL for the hackathon demo. For production, migrate the Prisma datasource to hosted Postgres and configure deployment secrets.
+- The app uses SQLite/libSQL for the hackathon demo. For hosted demos, configure a persistent libSQL/Turso database or migrate the datasource deliberately before production.
 - The AI judge is advisory only; the user still controls escrow release.
 - Full agent deliverables are hidden until escrow release. Before release, users see the summary, work log, proof hash, and optional judge recommendation.
-- Production hardening path: encrypt full deliverables, store encrypted blobs on Walrus, and use Seal-style policy-based decryption so access to the full response is gated by Sui task state.
+- Walrus and native Seal integration are the next production step after submission unless the optional Walrus env vars are configured in the live deployment.
+
+## Judge Quick Test
+
+1. Connect a Sui testnet wallet with gas.
+2. Create a small Research Agent task with a low reward.
+3. Fund escrow and open the task detail page.
+4. Run the agent and submit the proof transaction.
+5. Review the visible summary, proof hash, and work log.
+6. Ask the AI judge and submit the judge transaction.
+7. Release escrow.
+8. Sign the unlock message to reveal the encrypted full deliverable.
+
+This flow demonstrates the core thesis: AI work is escrowed on Sui, reviewed before payment, and only fully revealed after release.
 
 ## Submission Status
 

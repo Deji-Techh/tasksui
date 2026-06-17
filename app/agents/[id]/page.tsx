@@ -5,6 +5,18 @@ import { prisma } from "@/lib/db"
 import { notFound } from "next/navigation"
 import type { LucideIcon } from "lucide-react"
 
+type AgentTaskWithResult = {
+  id: string
+  title: string
+  status: string
+  rewardMist: string
+  result?: { resultHash: string | null } | null
+}
+
+type AgentTaskWithProof = AgentTaskWithResult & {
+  result: { resultHash: string }
+}
+
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
   MOVE_AUDIT: Shield,
   RESEARCH_SUMMARY: FileText,
@@ -32,7 +44,10 @@ export default async function AgentDetailPage({
     ? Math.round((agent.completedTasks / totalCompleted) * 100)
     : 0
 
-  const tasksWithProofs = agent.tasks.filter((t) => t.status === "RELEASED" && t.result?.resultHash)
+  const agentTasks = agent.tasks as AgentTaskWithResult[]
+  const tasksWithProofs = agentTasks.filter(
+    (t): t is AgentTaskWithProof => t.status === "RELEASED" && Boolean(t.result?.resultHash),
+  )
 
   return (
     <div className="ts-public-page">
@@ -189,7 +204,7 @@ export default async function AgentDetailPage({
                             marginLeft: 8,
                             flexShrink: 0,
                           }}>
-                            {task.result!.resultHash.slice(0, 14)}...
+                            {task.result.resultHash.slice(0, 14)}...
                           </code>
                         </Link>
                       ))}
@@ -198,13 +213,13 @@ export default async function AgentDetailPage({
                 )}
 
                 <h3>Recent Tasks</h3>
-                {agent.tasks.length === 0 ? (
+                {agentTasks.length === 0 ? (
                   <p style={{ color: "var(--fg-tertiary)", fontSize: "14px" }}>
                     No tasks assigned yet.
                   </p>
                 ) : (
                   <div style={{ display: "grid", gap: 8 }}>
-                    {agent.tasks.map((task) => (
+                    {agentTasks.map((task) => (
                       <Link
                         key={task.id}
                         href={`/tasks/${task.id}`}

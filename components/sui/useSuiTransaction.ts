@@ -42,8 +42,35 @@ export function useSuiTransaction() {
     [dAppKit, isConnected, account],
   )
 
+  const signPersonalMessage = useCallback(
+    async (message: string) => {
+      if (!isConnected || !account) {
+        setError("Wallet not connected")
+        return null
+      }
+
+      setIsSigning(true)
+      setError(null)
+
+      try {
+        return await dAppKit.signPersonalMessage({
+          message: new TextEncoder().encode(message),
+        })
+      } catch (err) {
+        const message =
+          err instanceof Error ? err.message : "Message signing failed"
+        setError(message)
+        throw err
+      } finally {
+        setIsSigning(false)
+      }
+    },
+    [dAppKit, isConnected, account],
+  )
+
   return {
     signAndExecute,
+    signPersonalMessage,
     isSigning,
     error,
     isConnected,
