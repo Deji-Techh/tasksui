@@ -45,6 +45,25 @@ function requireSuiTaskId(task: { suiTaskId: string | null }) {
   return { ok: true as const, suiTaskId: task.suiTaskId }
 }
 
+function redactDeliverable<T extends {
+  status: string
+  outputText?: string | null
+  result?: { fullOutput: string } | null
+} | null>(task: T): T {
+  if (!task || task.status === "RELEASED") return task
+  return {
+    ...task,
+    outputText: null,
+    result: task.result
+      ? {
+          ...task.result,
+          fullOutput:
+            "Full deliverable is locked until escrow is released. Review the summary, proof hash, and AI judge recommendation before approving.",
+        }
+      : task.result,
+  }
+}
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -58,7 +77,7 @@ export async function GET(
     if (!task) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 })
     }
-    return NextResponse.json(task)
+    return NextResponse.json(redactDeliverable(task))
   } catch (err) {
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to fetch task" },
@@ -119,7 +138,7 @@ export async function PATCH(
             where: { id },
             include: { agent: true, result: true },
           })
-          return NextResponse.json(updated)
+          return NextResponse.json(redactDeliverable(updated))
         }
 
         const agent = task.agentId
@@ -176,7 +195,7 @@ export async function PATCH(
             include: { agent: true, result: true },
           })
 
-          return NextResponse.json(updated)
+          return NextResponse.json(redactDeliverable(updated))
         } catch (error) {
           await prisma.task.update({
             where: { id },
@@ -244,7 +263,7 @@ export async function PATCH(
           include: { agent: true, result: true, judgeReport: true },
         })
 
-        return NextResponse.json(updated)
+        return NextResponse.json(redactDeliverable(updated))
       }
 
       // ── confirm_submission: verify on-chain tx, then set SUBMITTED ──
@@ -271,7 +290,7 @@ export async function PATCH(
           logTx(id, txDigest, "submit_completion"),
         ])
 
-        return NextResponse.json(updated)
+        return NextResponse.json(redactDeliverable(updated))
       }
 
       // ── confirm_judge: verify on-chain tx, then set JUDGE_REVIEWED ──
@@ -298,7 +317,7 @@ export async function PATCH(
           logTx(id, txDigest, "submit_judge_report"),
         ])
 
-        return NextResponse.json(updated)
+        return NextResponse.json(redactDeliverable(updated))
       }
 
       // ── confirm_chain: verify on-chain tx, then set FUNDED ──
@@ -321,7 +340,7 @@ export async function PATCH(
 
         await logTx(id, txDigest, "create_task", suiTaskId)
 
-        return NextResponse.json(updated)
+        return NextResponse.json(redactDeliverable(updated))
       }
 
       // ── release: verify on-chain tx, then set RELEASED and pay agent ──
@@ -366,7 +385,7 @@ export async function PATCH(
           }),
         ])
         await agentUpdate
-        return NextResponse.json(updated)
+        return NextResponse.json(redactDeliverable(updated))
       }
 
       // ── dispute: verify on-chain tx, then set DISPUTED ──
@@ -403,7 +422,7 @@ export async function PATCH(
           }),
         ])
         await agentUpdate
-        return NextResponse.json(updated)
+        return NextResponse.json(redactDeliverable(updated))
       }
 
       // ── discard: delete a PENDING_CHAIN task (not on-chain yet) ──
@@ -443,7 +462,7 @@ export async function PATCH(
 
         await logTx(id, txDigest, "cancel_task")
 
-        return NextResponse.json(updated)
+        return NextResponse.json(redactDeliverable(updated))
       }
 
       default:
