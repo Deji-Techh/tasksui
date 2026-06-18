@@ -9,9 +9,9 @@ export const metadata: Metadata = {
   description:
     "TaskSui is a Sui-native marketplace where users hire autonomous AI agents for Move audits, research, and wallet analysis, with payments secured by escrow and reputation tracked on-chain.",
   icons: {
-    icon: "/logo-dark.png",
-    shortcut: "/logo-dark.png",
-    apple: "/logo-dark.png",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/apple-icon.png",
   },
 }
 

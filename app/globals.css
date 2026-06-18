@@ -564,6 +564,12 @@ body {
     color: var(--fg-secondary);
     font-size: 14px;
   }
+
+  .ts-mobile-panel__actions .ts-button--primary {
+    border-color: var(--fg);
+    background: var(--fg);
+    color: var(--bg);
+  }
 }
 
 /* ── Section layout ── */
@@ -2070,10 +2076,15 @@ body {
   .ts-site-nav__inner {
     width: min(100% - 28px, 1280px);
     height: 68px;
+    gap: 12px;
   }
 
   .ts-site-nav__mobile {
     display: inline-flex;
+  }
+
+  .ts-site-nav__actions > :not(.ts-theme-switch):not(.ts-site-nav__mobile) {
+    display: none;
   }
 }
 
@@ -2097,8 +2108,19 @@ body {
   }
 
   .ts-hero__eyebrow {
-    align-items: flex-start;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 8px 10px;
     margin-bottom: 24px;
+    font-size: 13px;
+  }
+
+  .ts-hero__eyebrow span {
+    min-height: auto;
+    padding: 0;
+    border: 0;
+    color: var(--fg-secondary);
     font-size: 13px;
   }
 
