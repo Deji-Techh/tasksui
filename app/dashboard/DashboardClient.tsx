@@ -70,15 +70,7 @@ export default function DashboardClient() {
     <div className="ts-public-page">
       <main>
         <section className="ts-section">
-          <div
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              justifyContent: "space-between",
-              gap: 16,
-              marginBottom: 40,
-            }}
-          >
+          <div className="ts-dashboard-header">
             <div>
               <span className="ts-kicker">Dashboard</span>
               <h2>{isConnected ? "Your tasks." : "Connect your wallet."}</h2>
@@ -90,8 +82,7 @@ export default function DashboardClient() {
             </div>
             <Link
               href="/create"
-              className="ts-button ts-button--primary"
-              style={{ flexShrink: 0 }}
+              className="ts-button ts-button--primary ts-dashboard-header__action"
             >
               <Plus size={16} />
               New Task
@@ -99,35 +90,19 @@ export default function DashboardClient() {
           </div>
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 24, borderBottom: "1px solid var(--card-border)", paddingBottom: 0 }}>
+          <div className="ts-dashboard-tabs">
             {TABS.map((tab) => {
               const count = tasks.filter((t) => tab.statuses.includes(t.status)).length
               return (
                 <button
                   type="button"
                   key={tab.key}
+                  className={activeTab === tab.key ? "is-active" : ""}
                   onClick={() => setActiveTab(tab.key)}
-                  style={{
-                    padding: "10px 16px",
-                    border: "none",
-                    borderBottom: activeTab === tab.key ? "2px solid var(--accent)" : "2px solid transparent",
-                    background: "none",
-                    color: activeTab === tab.key ? "var(--fg)" : "var(--fg-tertiary)",
-                    fontSize: "var(--text-sm)",
-                    fontWeight: activeTab === tab.key ? 600 : 400,
-                    cursor: "pointer",
-                    whiteSpace: "nowrap",
-                  }}
                 >
                   {tab.label}
                   {count > 0 && (
-                    <span style={{
-                      marginLeft: 6,
-                      padding: "1px 6px",
-                      borderRadius: "var(--radius-full)",
-                      background: activeTab === tab.key ? "var(--accent-bg)" : "var(--bg-secondary)",
-                      fontSize: "var(--text-xs)",
-                    }}>
+                    <span>
                       {count}
                     </span>
                   )}
@@ -141,19 +116,11 @@ export default function DashboardClient() {
               <Loader2 size={24} style={{ animation: "spin 1s linear infinite" }} />
             </div>
           ) : !isConnected ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "80px 20px",
-                border: "1px solid var(--card-border)",
-                borderRadius: "var(--radius-xl)",
-                background: "var(--card)",
-              }}
-            >
-              <h3 style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 500 }}>
+            <div className="ts-dashboard-empty">
+              <h3>
                 Wallet required
               </h3>
-              <p style={{ margin: "0 auto", maxWidth: 400 }}>
+              <p>
                 Connect your Sui wallet to load tasks owned by your address.
               </p>
             </div>
@@ -165,19 +132,11 @@ export default function DashboardClient() {
               Failed to load tasks: {fetchError}
             </div>
           ) : filtered.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "80px 20px",
-                border: "1px solid var(--card-border)",
-                borderRadius: "var(--radius-xl)",
-                background: "var(--card)",
-              }}
-            >
-              <h3 style={{ margin: "0 0 12px", fontSize: 20, fontWeight: 500 }}>
+            <div className="ts-dashboard-empty">
+              <h3>
                 No {TABS.find((t) => t.key === activeTab)?.label.toLowerCase()} tasks
               </h3>
-              <p style={{ margin: "0 auto", maxWidth: 400 }}>
+              <p>
                 {activeTab === "created"
                   ? "Create your first task to hire an AI agent. Payment is held in escrow until you approve the work."
                   : "Tasks in this category will appear here."}
@@ -194,20 +153,8 @@ export default function DashboardClient() {
               )}
             </div>
           ) : (
-            <div style={{ display: "grid", gap: 8 }}>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "minmax(0, 1fr) 140px 120px 120px 100px",
-                  gap: 16,
-                  padding: "12px 20px",
-                  color: "var(--fg-tertiary)",
-                  fontSize: "var(--text-xs)",
-                  textTransform: "uppercase",
-                  letterSpacing: "var(--tracking-wider)",
-                  fontWeight: 500,
-                }}
-              >
+            <div className="ts-dashboard-list">
+              <div className="ts-dashboard-list__head">
                 <span>Task</span>
                 <span>Agent</span>
                 <span>Reward</span>
@@ -219,18 +166,7 @@ export default function DashboardClient() {
                 <Link
                   key={task.id}
                   href={`/tasks/${task.id}`}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "minmax(0, 1fr) 140px 120px 120px 100px",
-                    gap: 16,
-                    alignItems: "center",
-                    padding: "18px 20px",
-                    border: "1px solid var(--card-border)",
-                    borderRadius: "var(--radius-lg)",
-                    background: "var(--card)",
-                    color: "inherit",
-                    textDecoration: "none",
-                  }}
+                  className="ts-dashboard-row"
                 >
                   <div style={{ minWidth: 0 }}>
                     <strong

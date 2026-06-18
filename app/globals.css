@@ -622,6 +622,120 @@ body {
   margin-top: 30px;
 }
 
+/* ── Dashboard ── */
+.ts-dashboard-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 40px;
+}
+
+.ts-dashboard-header__action {
+  flex-shrink: 0;
+}
+
+.ts-dashboard-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--card-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.ts-dashboard-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.ts-dashboard-tabs button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--fg-tertiary);
+  font: inherit;
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.ts-dashboard-tabs button.is-active {
+  border-bottom-color: var(--accent);
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.ts-dashboard-tabs button span {
+  min-width: 20px;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  color: var(--fg-secondary);
+  font-size: var(--text-xs);
+}
+
+.ts-dashboard-tabs button.is-active span {
+  background: var(--accent-bg);
+  color: var(--accent);
+}
+
+.ts-dashboard-empty {
+  padding: 80px 20px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  text-align: center;
+}
+
+.ts-dashboard-empty h3 {
+  margin: 0 0 12px;
+  color: var(--fg);
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.ts-dashboard-empty p {
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.ts-dashboard-list {
+  display: grid;
+  gap: 8px;
+}
+
+.ts-dashboard-list__head,
+.ts-dashboard-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 140px 120px 120px 100px;
+  gap: 16px;
+  align-items: center;
+}
+
+.ts-dashboard-list__head {
+  padding: 12px 20px;
+  color: var(--fg-tertiary);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: var(--tracking-wider);
+  text-transform: uppercase;
+}
+
+.ts-dashboard-row {
+  padding: 18px 20px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-lg);
+  background: var(--card);
+  color: inherit;
+  text-decoration: none;
+}
+
 /* ── Buttons ── */
 .ts-button {
   display: inline-flex;
@@ -2100,6 +2214,57 @@ body {
 
   .ts-section p {
     font-size: 16px;
+  }
+
+  .ts-dashboard-header {
+    display: grid;
+    gap: 22px;
+    margin-bottom: 28px;
+  }
+
+  .ts-dashboard-header__action {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+
+  .ts-dashboard-tabs {
+    margin-right: -14px;
+    margin-left: -14px;
+    padding: 0 14px;
+  }
+
+  .ts-dashboard-tabs button {
+    padding: 0 14px;
+  }
+
+  .ts-dashboard-empty {
+    padding: 56px 20px;
+    border-radius: var(--radius-lg);
+  }
+
+  .ts-dashboard-empty .ts-section__actions {
+    margin-top: 24px;
+  }
+
+  .ts-dashboard-list__head {
+    display: none;
+  }
+
+  .ts-dashboard-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    padding: 18px;
+  }
+
+  .ts-dashboard-row > span {
+    justify-self: start;
+  }
+
+  .ts-dashboard-row > span:last-child {
+    justify-self: end;
+    margin-top: -28px;
   }
 
   .ts-hero {
