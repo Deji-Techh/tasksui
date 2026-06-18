@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/db"
+import { SEEDED_AGENTS } from "@/lib/constants"
 
 export async function GET() {
   try {
@@ -21,9 +22,12 @@ export async function GET() {
     ])
     return NextResponse.json({ taskCount, agentCount, completedCount, recentVerified })
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed" },
-      { status: 500 },
-    )
+    console.error("Failed to load stats", err)
+    return NextResponse.json({
+      taskCount: 0,
+      agentCount: SEEDED_AGENTS.length,
+      completedCount: 0,
+      recentVerified: [],
+    })
   }
 }

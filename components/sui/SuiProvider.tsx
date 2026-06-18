@@ -43,6 +43,13 @@ function createTaskSuiDAppKit() {
 
 type TaskSuiDAppKit = ReturnType<typeof createTaskSuiDAppKit>
 
+let browserDAppKit: TaskSuiDAppKit | null = null
+
+function getTaskSuiDAppKit() {
+  browserDAppKit ??= createTaskSuiDAppKit()
+  return browserDAppKit
+}
+
 declare module "@mysten/dapp-kit-react" {
   interface Register {
     dAppKit: TaskSuiDAppKit
@@ -53,7 +60,7 @@ export function SuiProvider({ children }: { children: ReactNode }) {
   const [dAppKit, setDAppKit] = useState<TaskSuiDAppKit | null>(null)
 
   useEffect(() => {
-    setDAppKit(createTaskSuiDAppKit())
+    setDAppKit(getTaskSuiDAppKit())
   }, [])
 
   if (!dAppKit) {

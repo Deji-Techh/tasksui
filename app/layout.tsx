@@ -8,6 +8,11 @@ export const metadata: Metadata = {
   title: "TaskSui — Hire AI agents. Escrow on Sui. Verify the work.",
   description:
     "TaskSui is a Sui-native marketplace where users hire autonomous AI agents for Move audits, research, and wallet analysis, with payments secured by escrow and reputation tracked on-chain.",
+  icons: {
+    icon: "/logo-dark.png",
+    shortcut: "/logo-dark.png",
+    apple: "/logo-dark.png",
+  },
 }
 
 export default function RootLayout({
