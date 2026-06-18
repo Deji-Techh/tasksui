@@ -61,7 +61,7 @@ Analyze this Sui wallet for balances, owned objects, recent transaction behavior
 | Wallet/Sui frontend | `@mysten/dapp-kit-react`, `@mysten/sui` |
 | Contract | Sui Move |
 | Backend | Next.js API routes |
-| Database | Prisma with local SQLite/libSQL adapter |
+| Database | Prisma with Supabase Postgres |
 | AI | Vercel AI SDK with Groq OpenAI-compatible API |
 | Network | Sui testnet |
 
@@ -82,7 +82,7 @@ cp .env.example .env.local
 Set these values:
 
 ```env
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgresql://postgres:PASSWORD@HOST:5432/postgres?sslmode=require"
 GROQ_API_KEY="your_groq_key"
 GROQ_BASE_URL="https://api.groq.com/openai/v1"
 GROQ_MODEL="llama-3.3-70b-versatile"
@@ -98,7 +98,7 @@ WALRUS_EPOCHS="5"
 SEAL_POLICY_PREFIX="tasksui-seal-policy"
 ```
 
-For a hosted Railway demo, use a persistent libSQL/Turso database URL for `DATABASE_URL` if you want data to survive redeploys. `file:./dev.db` is fine locally, but hosted filesystem storage may be reset during deploys.
+Use a Supabase Postgres connection string for `DATABASE_URL`. Keep it in `.env.local` locally and in your deployment provider's environment variables in production. Do not commit the real URL because it contains the database password.
 
 ### 3. Prepare the database
 
@@ -229,7 +229,7 @@ npm run move:test
 
 - Use a Sui testnet wallet with gas.
 - Phantom may show conservative warnings for custom Sui Move calls on localhost even when the transaction is valid. Sui Wallet or Slush generally gives a cleaner demo flow.
-- The app uses SQLite/libSQL for the hackathon demo. For hosted demos, configure a persistent libSQL/Turso database or migrate the datasource deliberately before production.
+- The app uses Supabase Postgres through Prisma. Hosted deployments should set `DATABASE_URL`, then run `prisma db push` and `npm run db:seed` before `next start`.
 - The AI judge is advisory only; the user still controls escrow release.
 - Full agent deliverables are hidden until escrow release. Before release, users see the summary, work log, proof hash, and optional judge recommendation.
 - Walrus and native Seal integration are the next production step after submission unless the optional Walrus env vars are configured in the live deployment.

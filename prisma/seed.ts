@@ -1,10 +1,14 @@
 import { PrismaClient } from "@prisma/client"
-import { PrismaLibSql } from "@prisma/adapter-libsql"
+import { PrismaPg } from "@prisma/adapter-pg"
 import { SEEDED_AGENTS } from "../lib/constants"
 
-const adapter = new PrismaLibSql({
-  url: process.env["DATABASE_URL"] ?? "file:./dev.db",
-})
+const databaseUrl = process.env["DATABASE_URL"]
+
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL is required")
+}
+
+const adapter = new PrismaPg(databaseUrl)
 const prisma = new PrismaClient({ adapter })
 
 async function main() {
